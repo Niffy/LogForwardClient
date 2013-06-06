@@ -64,6 +64,7 @@ public class start {
 			log.error("Error creating selector", e);
 		}
 		this.REQUESTER = new Requester(CLIENT_SELECTOR, DEVICES, SETTINGS.get("Isometric world"), VERSION);
+		this.LOG_MANAGER.setSelector(CLIENT_SELECTOR);
 		this.process();
 	}
 
