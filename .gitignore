@@ -16,4 +16,4 @@ libs/android-support*.*
 libs/android-logging-log*.*
 libs/log4j*.*
 libs/slf4j*.*
-checkLog.log
+checkLog.log*
