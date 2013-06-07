@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -116,11 +117,9 @@ public class Requester implements ILogOwner {
 
 	protected LogRequest<IMessage> produceGetRequest(final Device pDevice) {
 		final int pSequence = this.mSeq.getAndIncrement();
-		InetAddress pAddress;
-		try {
-			pAddress = InetAddress.getByName(pDevice.getAddress());
-		} catch (UnknownHostException e) {
-			log.error("Could not get address: {}", pDevice.getAddress());
+		InetSocketAddress pAddress = this.getAddress(pDevice.getAddress(), this.getDevicePort(pDevice));
+		if (pAddress == null) {
+			log.error("Could not get address and port for device: {}", pDevice.getName());
 			return null;
 		}
 		MessageSendRequest pMessage = new MessageSendRequest(this.mVersion, MessageFlag.SEND_REQUEST.getNumber());
@@ -144,11 +143,9 @@ public class Requester implements ILogOwner {
 
 	protected LogRequest<IMessage> produceDeleteRequest(final Device pDevice) {
 		final int pSequence = this.mSeq.getAndIncrement();
-		InetAddress pAddress;
-		try {
-			pAddress = InetAddress.getByName(pDevice.getAddress());
-		} catch (UnknownHostException e) {
-			log.error("Could not get address: {}", pDevice.getAddress());
+		InetSocketAddress pAddress = this.getAddress(pDevice.getAddress(), this.getDevicePort(pDevice));
+		if (pAddress == null) {
+			log.error("Could not get address and port for device: {}", pDevice.getName());
 			return null;
 		}
 		MessageDeleteRequest pMessage = new MessageDeleteRequest(this.mVersion, MessageFlag.SEND_REQUEST.getNumber());
@@ -220,6 +217,26 @@ public class Requester implements ILogOwner {
 		} else {
 			log.error("Could not write to file as device is null");
 		}
+	}
+
+	protected int getDevicePort(final Device pDevice) {
+		int pDefaultPort = this.mSetting.getServerPort();
+		int pDevicePort = pDevice.getPort();
+		if (pDevicePort != -1) {
+			return pDevicePort;
+		} else {
+			return pDefaultPort;
+		}
+	}
+
+	protected InetSocketAddress getAddress(final String pIP, int pPort) {
+		try {
+			InetAddress pInetAddy = InetAddress.getByName(pIP);
+			return new InetSocketAddress(pInetAddy, pPort);
+		} catch (UnknownHostException e) {
+			log.error("Could not get InetSocketAddress for: {}", pIP);
+		}
+		return null;
 	}
 	// ===========================================================
 	// Inner and Anonymous Classes
