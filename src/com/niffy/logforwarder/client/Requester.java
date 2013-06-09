@@ -196,7 +196,7 @@ public class Requester implements ILogOwner {
 	protected void writeFile(final byte[] pData, final Device pDevice) {
 		if (pDevice != null) {
 			FileOutputStream fop = null;
-			String pPath = this.mSetting.getFileNamePath() + pDevice.getFileName();
+			String pPath = this.mSetting.getStoragePath() + pDevice.getFileName();
 			try {
 				File file = new File(pPath);
 				if (!file.exists()) {
