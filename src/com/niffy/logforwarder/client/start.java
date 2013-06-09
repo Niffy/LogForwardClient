@@ -184,6 +184,10 @@ public class start {
 					this.REQUESTER.deleteAll();
 				} else if (CurLine.equals("del-single")) {
 					this.deleteSingle(in);
+				}else if (CurLine.equals("shutdown-all")) {
+					this.REQUESTER.shutdownAll();
+				} else if (CurLine.equals("shutdown-single")) {
+					this.shutdownSingle(in);
 				}
 			}
 		} catch (IOException e) {
@@ -258,6 +262,47 @@ public class start {
 						if (device.getID() == index) {
 							found = true;
 							this.REQUESTER.deleteSingle(device);
+						}
+					}
+					if (!found) {
+						log.warn("Could not find device to request delete from");
+					}
+				} catch (NumberFormatException e) {
+					log.error("Could not get a number, going up..^");
+					return;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void shutdownSingle(BufferedReader in) throws IOException {
+		String CurLine = "";
+		try {
+			System.out.println("Delete from Whom? : ");
+			Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
+			while (entries.hasNext()) {
+				Map.Entry<String, Device> entry = entries.next();
+				Device device = entry.getValue();
+				log.info("ID: {} Name: {}", device.getID(), device.getName());
+			}
+			CurLine = in.readLine();
+			if (CurLine.equals("quit")) {
+				System.exit(0);
+			} else if (CurLine.equals("up")) {
+				return;
+			} else {
+				try {
+					int index = Integer.valueOf(CurLine);
+					boolean found = false;
+					entries = this.DEVICES.entrySet().iterator();
+					while (entries.hasNext()) {
+						Map.Entry<String, Device> entry = entries.next();
+						Device device = entry.getValue();
+						if (device.getID() == index) {
+							found = true;
+							this.REQUESTER.shutdownSingle(device);
 						}
 					}
 					if (!found) {

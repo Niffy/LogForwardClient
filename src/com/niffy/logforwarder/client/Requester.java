@@ -23,6 +23,7 @@ import com.niffy.logforwarder.lib.messages.MessageError;
 import com.niffy.logforwarder.lib.messages.MessageFlag;
 import com.niffy.logforwarder.lib.messages.MessageSendRequest;
 import com.niffy.logforwarder.lib.messages.MessageSendDataFile;
+import com.niffy.logforwarder.lib.messages.MessageShutDownService;
 
 public class Requester implements ILogOwner {
 	// ===========================================================
@@ -106,6 +107,22 @@ public class Requester implements ILogOwner {
 		this.queueDeleteRequest(pDevice);
 	}
 
+	public void shutdownAll() {
+		ArrayList<String> Devices = this.mSetting.getDevices();
+		for (String key : Devices) {
+			Device device = this.mDevices.get(key);
+			if (device != null) {
+				this.queueShutdownRequest(device);
+			} else {
+				log.error("Could not find device obj for : {}", key);
+			}
+		}
+	}
+
+	public void shutdownSingle(final Device pDevice) {
+		this.queueShutdownRequest(pDevice);
+	}
+
 	protected void queueGetRequest(final Device pDevice) {
 		LogRequest<IMessage> request = this.produceGetRequest(pDevice);
 		if (request != null) {
@@ -158,6 +175,30 @@ public class Requester implements ILogOwner {
 		return request;
 	}
 
+	protected void queueShutdownRequest(final Device pDevice) {
+		LogRequest<IMessage> request = this.produceShutdownRequest(pDevice);
+		if (request != null) {
+			this.mSelector.addRequest(request);
+		} else {
+			log.error("Could not produce a shutdown request for device: {}", pDevice.getName());
+		}
+	}
+	
+	protected LogRequest<IMessage> produceShutdownRequest(final Device pDevice) {
+		final int pSequence = this.mSeq.getAndIncrement();
+		InetSocketAddress pAddress = this.getAddress(pDevice.getAddress(), this.getDevicePort(pDevice));
+		if (pAddress == null) {
+			log.error("Could not get address and port for device: {}", pDevice.getName());
+			return null;
+		}
+		MessageShutDownService pMessage = new MessageShutDownService(this.mVersion, MessageFlag.SHUT_DOWN_SERVICE.getNumber());
+		pMessage.setSequence(pSequence);
+		LogRequest<IMessage> request = new LogRequest<IMessage>(pSequence, pAddress, pMessage, this);
+		this.mRequests.put(request.getClientRequest(), request);
+		this.mRequestDeviceCrossRef.put(pSequence, pDevice);
+		return request;
+	}
+	
 	protected <T extends IMessage> void handleMessage(int pRequest, T pMessage) {
 		int flag = pMessage.getMessageFlag();
 		if (flag == MessageFlag.DELETE_RESPONSE.getNumber()) {
