@@ -22,7 +22,7 @@ import com.niffy.logforwarder.lib.messages.MessageDeleteResponse;
 import com.niffy.logforwarder.lib.messages.MessageError;
 import com.niffy.logforwarder.lib.messages.MessageFlag;
 import com.niffy.logforwarder.lib.messages.MessageSendRequest;
-import com.niffy.logforwarder.lib.messages.MessageSendResponse;
+import com.niffy.logforwarder.lib.messages.MessageSendDataFile;
 
 public class Requester implements ILogOwner {
 	// ===========================================================
@@ -148,7 +148,7 @@ public class Requester implements ILogOwner {
 			log.error("Could not get address and port for device: {}", pDevice.getName());
 			return null;
 		}
-		MessageDeleteRequest pMessage = new MessageDeleteRequest(this.mVersion, MessageFlag.SEND_REQUEST.getNumber());
+		MessageDeleteRequest pMessage = new MessageDeleteRequest(this.mVersion, MessageFlag.DELETE_REQUEST.getNumber());
 		pMessage.setSDCard(this.mSetting.getSDCard());
 		pMessage.setLogFileNameAndPath(this.mSetting.getFileNamePath());
 		pMessage.setSequence(pSequence);
@@ -162,7 +162,7 @@ public class Requester implements ILogOwner {
 		int flag = pMessage.getMessageFlag();
 		if (flag == MessageFlag.DELETE_RESPONSE.getNumber()) {
 			this.handleDeleteResponse(pMessage);
-		} else if (flag == MessageFlag.SEND_RESPONSE.getNumber()) {
+		} else if (flag == MessageFlag.SEND_DATA_FILE.getNumber()) {
 			this.handleGetResponse(pMessage);
 		} else if (flag == MessageFlag.ERROR.getNumber()) {
 			this.handleErrorResponse(pMessage);
@@ -170,8 +170,10 @@ public class Requester implements ILogOwner {
 	}
 
 	protected <T extends IMessage> void handleGetResponse(T pMessage) {
-		MessageSendResponse response = (MessageSendResponse) pMessage;
+		MessageSendDataFile response = (MessageSendDataFile) pMessage;
 		this.writeFile(response.getData(), this.mRequestDeviceCrossRef.get(response.getSequence()));
+		this.mRequests.remove(pMessage.getSequence());
+		this.mRequestDeviceCrossRef.remove(pMessage.getSequence());
 	}
 
 	protected <T extends IMessage> void handleDeleteResponse(T pMessage) {
@@ -182,6 +184,8 @@ public class Requester implements ILogOwner {
 		} else {
 			log.warn("Seq: {} was NOT deleted", response.getSequence());
 		}
+		this.mRequests.remove(pMessage.getSequence());
+		this.mRequestDeviceCrossRef.remove(pMessage.getSequence());
 	}
 
 	protected <T extends IMessage> void handleErrorResponse(T pMessage) {

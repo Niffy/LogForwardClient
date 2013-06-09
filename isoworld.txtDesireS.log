@@ -1,0 +1,13 @@
+2013-06-09 15:58:07,063 - INFO  - [main] - [com.niffy.IsometricWorld.IsometricWorldActivity] - (IsometricWorldActivity.java:106)- Starting game!
+2013-06-09 15:58:07,508 - DEBUG - [GLThread 11] - [com.niffy.IsometricWorld.network.NetworkManager] - (NetworkManager.java:171)- creating threads
+2013-06-09 15:58:07,544 - DEBUG - [main] - [com.niffy.IsometricWorld.IsometricWorldActivity] - (IsometricWorldActivity.java:466)- Handle message: -1000003
+2013-06-09 15:58:07,551 - DEBUG - [main] - [com.niffy.IsometricWorld.network.NetworkManager] - (NetworkManager.java:138)- Handling message: -1000003 
+2013-06-09 15:58:07,552 - DEBUG - [main] - [com.niffy.IsometricWorld.network.NetworkManager] - (NetworkManager.java:180)- Main comms thread started
+2013-06-09 15:58:07,656 - DEBUG - [ServerThread] - [com.niffy.AndEngineLockStepEngine.threads.nio.ServerSelector] - (ServerSelector.java:58)- Running TCP Selector Thread
+2013-06-09 15:58:07,667 - DEBUG - [Main communication thread] - [com.niffy.AndEngineLockStepEngine.threads.CommunicationHandler] - (CommunicationHandler.java:94)- Handling message: -1000000
+2013-06-09 15:58:07,826 - DEBUG - [ClientThread] - [com.niffy.AndEngineLockStepEngine.threads.nio.ClientSelector] - (ClientSelector.java:55)- Running TCP Client Selector Thread
+2013-06-09 15:58:07,827 - DEBUG - [Main communication thread] - [com.niffy.AndEngineLockStepEngine.threads.CommunicationHandler] - (CommunicationHandler.java:94)- Handling message: -1000001
+2013-06-09 15:58:07,956 - DEBUG - [UDPThread] - [com.niffy.AndEngineLockStepEngine.threads.nio.UDPSelector] - (UDPSelector.java:59)- Running UDP Selector Thread
+2013-06-09 15:58:07,958 - DEBUG - [Main communication thread] - [com.niffy.AndEngineLockStepEngine.threads.CommunicationHandler] - (CommunicationHandler.java:94)- Handling message: -1000002
+2013-06-09 15:58:10,842 - INFO  - [main] - [com.niffy.IsometricWorld.GeneralManager] - (GeneralManager.java:146)- Act as host
+2013-06-09 15:58:10,844 - DEBUG - [main] - [com.niffy.IsometricWorld.network.NetworkManager] - (NetworkManager.java:239)- isHostSelected

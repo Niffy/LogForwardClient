@@ -26,17 +26,16 @@ import org.xml.sax.XMLReader;
 
 import com.niffy.logforwarder.client.parser.DeviceParser;
 import com.niffy.logforwarder.client.parser.SettingsParser;
-import com.niffy.logforwarder.lib.ClientSelector;
 import com.niffy.logforwarder.lib.logmanagement.ILogManager;
 import com.niffy.logforwarder.lib.logmanagement.LogManagerClient;
 
 public class start {
 	private final static Logger log = LoggerFactory.getLogger(start.class);
-	public ClientSelector CLIENT_SELECTOR;
+	public CustomClientSelector CLIENT_SELECTOR;
 	public InetSocketAddress ADDRESS;
 	public int PORT = 1006;
 	public int BUFFER = 20971520;
-	public int SERVER_PORT = 1007;
+	public int SERVER_PORT = 1088;
 	public ILogManager LOG_MANAGER;
 	public int VERSION = 0;
 	public HashMap<String, Device> DEVICES = new HashMap<String, Device>();
@@ -57,7 +56,7 @@ public class start {
 		this.LOG_MANAGER = new LogManagerClient(this.VERSION);
 		this.ADDRESS = new InetSocketAddress(this.PORT);
 		try {
-			this.CLIENT_SELECTOR = new ClientSelector("Client Selector", this.ADDRESS, this.BUFFER, this.SERVER_PORT,
+			this.CLIENT_SELECTOR = new CustomClientSelector("Client Selector", this.ADDRESS, this.BUFFER, this.SERVER_PORT,
 					this.LOG_MANAGER);
 			new Thread(this.CLIENT_SELECTOR).start();
 		} catch (IOException e) {
@@ -258,7 +257,7 @@ public class start {
 						Device device = entry.getValue();
 						if (device.getID() == index) {
 							found = true;
-							this.REQUESTER.getSingle(device);
+							this.REQUESTER.deleteSingle(device);
 						}
 					}
 					if (!found) {
