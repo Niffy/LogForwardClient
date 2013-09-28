@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="LogForwardClient">
+	<property name="src.dir"     value="src"/><!-- src files-->
+	<property name="build.dir"   value="bin"/><!-- output directory -->
+	<property name="classes.dir" value="${build.dir}/classes"/><!-- where to store compiled classes -->
+	<property name="jar.dir"     value="${build.dir}/jar"/><!-- where to put compiled jars -->
+	<property name="dist.dir"     value="${build.dir}/dist"/><!-- the files to distrubute once whole process complete -->
+	<property name="dist-lib.dir"     value="${dist.dir}/lib"/><!-- the location of where to store libs to dist -->
+	<property name="dist-src.dir"     value="dist"/> <!-- Hold files to dist later on, ie log.properties -->
+	<property name="main-class"  value="com.niffy.logforwarder.client.start" /> <!-- Main starting file -->
+	<property name="lib.dir"     value="libs"/> <!-- Location of libs the project uses -->
+	<property name="LogForwardLib.location" value="../LogForwardLib"/>
+	<property name="LogForwardLib.bin" value="${LogForwardLib.location}/bin"/>
+	<property name="LogForwardLib.bin.jar" value="${LogForwardLib.bin}/jar"/>
+	<property name="LogForwardLib.dist" value="${LogForwardLib.bin}/dist"/>
+	<property name="LogForwardLib.dist.lib" value="${LogForwardLib.dist}/lib"/>
+	<property name="LogForwardLib-withoutdependencies.jar" value="LogForwardLib.jar"/>
+	<property name="LogForwardLib-withdependencies.jar" value="LogForwardLib-dependencies.jar"/>
+	<property name="LogForwardLib.jar.withoutdependencies" value="${LogForwardLib.dist}/${LogForwardLib-withoutdependencies.jar}"/>
+	<property name="LogForwardLib.jar.withdependencies" value="${LogForwardLib.dist}/${LogForwardLib-withdependencies.jar}"/>
+	
+	<tstamp>
+	    <format property="now" pattern="dd.MM.yyyy HH:mm"/>
+	</tstamp>
+	
+	<!-- Files which need are needed to compile jar-->
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="*.jar"/> <!-- Need all libs in the libs folder to compile, project own libs -->
+		<pathelement path="${dist-src.dir}"/> <!-- Including all files here just incase the compile process needs antyhing, probably wrong-->
+		<fileset dir="${LogForwardLib.dist.lib}" includes="*.jar"/> <!-- all libs of referenced project  -->
+		<pathelement path="${LogForwardLib.jar.withoutdependencies}"/> <!-- the logforwardlib -->
+	</path>
+	
+	<!-- When we want to run the jar without dependencies compiled in, then point to location of required files -->
+	<path id="classpath.dist">
+		<fileset dir="${dist-lib.dir}" includes="*.jar"/>
+		<pathelement path="${dist.dir}"/><!-- This is so we can blanket all files, but really we need the log4j properties -->
+		<pathelement path="${LogForwardLib.jar.withoutdependencies}"/> <!-- The LogForwardLib jar -->
+	</path>
+
+	<target name="create-dist-folder" description="Create dist folder">
+		<mkdir dir="${dist.dir}"/>
+	</target>
+	
+	<target name="distribute-libs" depends="create-dist-folder" description="Create the dist and libs folder, copy over libs and properties file">
+		<!-- Properties files etc -->
+		<mkdir dir="${dist-lib.dir}"/>
+		<copy todir="${dist.dir}">
+		    <fileset dir="${dist-src.dir}"/>
+		</copy>
+		<echo message="Copied required properties to dist folder ${dist.dir}" />
+		<!-- LogForwardLib required libs -->
+		<copy todir="${dist-lib.dir}">
+			<fileset dir="${LogForwardLib.dist.lib}"/>
+		</copy>
+		<!-- This own project libs required. -->
+		<copy todir="${dist-lib.dir}">
+			<fileset dir="${lib.dir}"/>
+		</copy>
+		<!-- LogforwardLib jar without dependencies -->
+		<copy file="${LogForwardLib.jar.withoutdependencies}" todir="${dist-lib.dir}"/>
+		<echo message="Copied required libs to dist folder ${dist.dir}" />
+	</target>
+	
+	<target name="compile" description="Compile the java program">
+		<mkdir dir="${classes.dir}"/>
+	    <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false"  classpathref="classpath">
+		</javac>
+	</target>
+		
+	<target name="jar-create-without-dependencies" depends="compile, distribute-libs" >
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+                <attribute name="Implementation-Title" value="${application.title}"/>
+            	<attribute name="Implementation-Version" value="${now}"/>
+            </manifest>
+        </jar>
+		<copy todir="${dist.dir}">
+			<fileset dir="${jar.dir}"/>
+		</copy>
+		<echo message="Copyied the jar to ${dist.dir}" />
+    </target>
+	
+	<target name="jar-create-with-dependencies" depends="compile, create-dist-folder" >
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}-dependencies.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            	<attribute name="Implementation-Title" value="${application.title}"/>
+            	<attribute name="Implementation-Version" value="${now}"/>
+            </manifest>
+        	<fileset dir="${classes.dir}" includes="**/*.class" /> <!-- the classes of this project -->
+	        <zipgroupfileset dir="${lib.dir}" includes="**/*.jar" /> <!-- The libs required for this project -->
+        	<fileset dir="${dist-src.dir}" excludes="*.jar"/> <!-- extra files such as .properties -->
+        	<zipgroupfileset dir="${LogForwardLib.dist}" includes="${LogForwardLib-withdependencies.jar}" /> <!-- Required lib with its own dependencies -->
+        </jar>
+		<copy todir="${dist.dir}">
+			<fileset dir="${jar.dir}"/>
+		</copy>
+		<echo message="Copyied the jar to ${dist.dir}" />
+    </target>
+	
+	<target name="clean" description="Cleans build directory">
+	    <delete dir="${build.dir}" failonerror="false"/>
+	</target>
+	<target name="release" depends="clean, release-with, release-without" description="Cleans and creates jar with and without dependencies"/>
+	<target name="release-with" depends="clean, jar-create-with-dependencies" description="Cleans and creates jar with  dependencies"/>
+	<target name="release-without" depends="clean, jar-create-without-dependencies" description="Cleans and creates jar without dependencies" />
+	<target name="run" depends="run-without" description="Runs jar without dependencies"/>
+	<target name="run-without" depends="jar-create-without-dependencies" description="Runs jar without dependencies">
+		<java fork="true" classname="${main-class}">
+			<classpath>
+			    <path refid="classpath.dist"/>
+			    <path location="${jar.dir}/${ant.project.name}.jar"/>
+			</classpath>
+		</java>
+	</target>
+	<target name="run-with" depends="jar-create-with-dependencies" description="Runs jar with dependencies" >
+		<java fork="true" classname="${main-class}" >
+			<classpath>
+			    <path location="${dist.dir}/${ant.project.name}-dependencies.jar"/>
+			</classpath>
+		</java>
+	</target>
+	
+	<target name="help">
+		<echo>Niffy Java LogForwardClient. Available targets:</echo>
+		<echo>   clean:				Clean build directory.</echo>
+		<echo>   release:			Cleans, creates jar with and without dependencies.</echo>
+		<echo>   release-with:		Cleans, creates jar with dependencies.</echo>
+		<echo>   release-without:	Cleans, creates jar without dependencies.</echo>
+		<echo>   run:				Runs jar without dependencies.</echo>
+		<echo>   run-with:			Runs jar with dependencies.</echo>
+		<echo>   run-without:		Runs jar without dependencies.</echo>
+		<echo></echo>
+		<echo>Best not to call these are they are part of a process</echo>
+		<echo>	 create-dist-folder: Creates Dist folder</echo>
+		<echo>   distribute-libs:	Copies files the to dist folder for jar without dependencies</echo>
+		<echo>   compile:			Compiles java classes</echo>
+		<echo>   jar-create-without-dependencies: calls..compile, distribute-libs, creates jar then copies to dist</echo>
+		<echo>   jar-create-with-dependencies: calls..compile, create-dist-folder, creates jar then copies to dist</echo>
+	</target>
+</project>
