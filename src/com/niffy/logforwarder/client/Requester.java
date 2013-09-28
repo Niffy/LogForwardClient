@@ -47,7 +47,7 @@ public class Requester implements ILogOwner {
 	 * Key = Seq num Value = Device its for
 	 */
 	protected HashMap<Integer, Device> mRequestDeviceCrossRef = new HashMap<Integer, Device>();
-
+	
 	// ===========================================================
 	// Constructors
 	// ===========================================================

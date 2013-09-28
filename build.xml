@@ -7,7 +7,7 @@
 	<property name="dist.dir"     value="${build.dir}/dist"/><!-- the files to distrubute once whole process complete -->
 	<property name="dist-lib.dir"     value="${dist.dir}/lib"/><!-- the location of where to store libs to dist -->
 	<property name="dist-src.dir"     value="dist"/> <!-- Hold files to dist later on, ie log.properties -->
-	<property name="main-class"  value="com.niffy.logforwarder.client.start" /> <!-- Main starting file -->
+	<property name="main-class"  value="com.niffy.logforwarder.client.Client" /> <!-- Main starting file -->
 	<property name="lib.dir"     value="libs"/> <!-- Location of libs the project uses -->
 	<property name="LogForwardLib.location" value="../LogForwardLib"/>
 	<property name="LogForwardLib.bin" value="${LogForwardLib.location}/bin"/>
