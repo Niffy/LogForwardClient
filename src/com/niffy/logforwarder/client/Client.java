@@ -114,7 +114,8 @@ public class Client {
 		Option shutdownall = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(SHUTDOWN_ALL)
 				.withDescription("Shutdown collection services on all devices").create(SHUTDOWN_ALL_OPT);
 		Option shutdownsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
-				.withLongOpt(SHUTDOWN_SINGLE).withDescription("Shutdown collection services on a device").create(SHUTDOWN_SINGLE_OPT);
+				.withLongOpt(SHUTDOWN_SINGLE).withDescription("Shutdown collection services on a device")
+				.create(SHUTDOWN_SINGLE_OPT);
 		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
 				.create(QUIT_OPT);
 		options.addOption(help);
@@ -152,10 +153,10 @@ public class Client {
 				String pSettings = cmd.getOptionValue(SETTINGS_INPUT_OPT);
 				execute(pDevices, pSettings);
 			} else if (cmd.hasOption(LIST_OPT)) {
-				log.info("Not supported yet!");
+				log.info("Not supported yet! Need to read everything in first!");
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
-			}else{
+			} else {
 				log.info("No commands selected");
 			}
 		} catch (Exception e) {
@@ -322,7 +323,7 @@ public class Client {
 				final String pDeviceString = cmd.getOptionValue(COLLECT_SINGLE_OPT);
 				if (pDeviceString != null) {
 					this.collectSingle(pDeviceString);
-				}else{
+				} else {
 					log.info("No device ID supplied with command: {}", COLLECT_SINGLE);
 				}
 			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
@@ -331,7 +332,7 @@ public class Client {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
 					this.deleteSingle(pDeviceString);
-				}else{
+				} else {
 					log.info("No device ID supplied with command: {}", DEL_SINGLE);
 				}
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
@@ -340,19 +341,19 @@ public class Client {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
 					this.deleteSingle(pDeviceString);
-				}else{
+				} else {
 					log.info("No device ID supplied with command: {}", DEL_SINGLE);
 				}
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
 				this.REQUESTER.deleteAll();
 			} else if (cmd.hasOption(LIST_OPT)) {
-				log.info("Not supported yet!");
+				this.listDevices();
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
-			}else if(cmd.hasOption(QUIT)){
+			} else if (cmd.hasOption(QUIT)) {
 				log.info("QUIT");
 				System.exit(0);
-			}else{
+			} else {
 				log.info("No commands selected, are you putting - before the command?");
 			}
 		} catch (Exception e) {
@@ -440,6 +441,27 @@ public class Client {
 			this.REQUESTER.shutdownSingle(pDevice);
 		} else {
 			log.info("Could not find a device with that ID");
+		}
+	}
+	
+	protected void listDevices(){
+		StringBuilder builder = new StringBuilder();
+		Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
+		while (entries.hasNext()) {
+			Map.Entry<String, Device> entry = entries.next();
+			Device device = entry.getValue();
+			builder.append("ID: ");
+			builder.append(device.getID());
+			builder.append(" Device: ");
+			builder.append(device.getName());
+			builder.append(" File: ");
+			builder.append(device.getFileName());
+			builder.append(" Port: ");
+			builder.append(device.getPort());
+			builder.append(" IP: ");
+			builder.append(device.getAddress());
+			log.info(builder.toString());
+			builder.setLength(0);
 		}
 	}
 
