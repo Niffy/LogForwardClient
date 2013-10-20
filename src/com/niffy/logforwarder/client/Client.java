@@ -104,7 +104,7 @@ public class Client {
 				.withDescription("List all devices").create(LIST_OPT);
 		Option collectall = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(COLLECT_ALL)
 				.withDescription("Collect all logs from connected devices").create(COLLECT_ALL_OPT);
-		Option collectsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(true)
+		Option collectsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
 				.withLongOpt(COLLECT_SINGLE).withDescription("Collect log from single device")
 				.create(COLLECT_SINGLE_OPT);
 		Option deleteall = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(DEL_ALL)
@@ -155,9 +155,11 @@ public class Client {
 				log.info("Not supported yet!");
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
+			}else{
+				log.info("No commands selected");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Error with command input: {}", args, e);
 			showHelp(options);
 		}
 	}
@@ -302,26 +304,9 @@ public class Client {
 				System.out.print("main Input: ");
 				String[] pInput = in.readLine().split(" ");
 				this.readfromline(pInput);
-				/*
-				if (CurLine.equals("quit")) {
-					System.exit(0);
-				} else if (CurLine.equals("collect-all")) {
-					this.REQUESTER.getAll();
-				} else if (CurLine.equals("collect-single")) {
-					this.collectSingle(in);
-				} else if (CurLine.equals("del-all")) {
-					this.REQUESTER.deleteAll();
-				} else if (CurLine.equals("del-single")) {
-					this.deleteSingle(in);
-				} else if (CurLine.equals("shutdown-all")) {
-					this.REQUESTER.shutdownAll();
-				} else if (CurLine.equals("shutdown-single")) {
-					this.shutdownSingle(in);
-				}
-				*/
 			}
 		} catch (IOException e) {
-			log.error("Error somewhere: ", e);
+			log.error("Error reading in input");
 		}
 	}
 
@@ -333,6 +318,7 @@ public class Client {
 				showHelp(this.COMMAND_OPTIONS);
 			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
 				this.REQUESTER.getAll();
+				return;
 			} else if (cmd.hasOption(COLLECT_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(COLLECT_SINGLE_OPT);
 				if (pDeviceString != null) {
@@ -340,8 +326,10 @@ public class Client {
 				}else{
 					log.info("No device ID supplied with command: {}", COLLECT_SINGLE);
 				}
+				return;
 			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
 				this.REQUESTER.getAll();
+				return;
 			} else if (cmd.hasOption(DEL_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
@@ -349,8 +337,10 @@ public class Client {
 				}else{
 					log.info("No device ID supplied with command: {}", DEL_SINGLE);
 				}
+				return;
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
 				this.REQUESTER.deleteAll();
+				return;
 			} else if (cmd.hasOption(DEL_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
@@ -358,15 +348,24 @@ public class Client {
 				}else{
 					log.info("No device ID supplied with command: {}", DEL_SINGLE);
 				}
+				return;
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
 				this.REQUESTER.deleteAll();
+				return;
 			} else if (cmd.hasOption(LIST_OPT)) {
 				log.info("Not supported yet!");
+				return;
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
+				return;
+			}else if(cmd.hasOption(QUIT)){
+				log.info("QUIT");
+				System.exit(0);
+			}else{
+				log.info("No commands selected, are you putting - before the command?");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Error with command input: {}", pInput, e);
 			showHelp(this.COMMAND_OPTIONS);
 		}
 	}
