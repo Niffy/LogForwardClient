@@ -38,7 +38,7 @@ import com.niffy.logforwarder.lib.logmanagement.LogManagerClient;
 
 public class Client {
 	private final static Logger log = LoggerFactory.getLogger(Client.class);
-	
+
 	public CustomClientSelector CLIENT_SELECTOR;
 	public InetSocketAddress ADDRESS;
 	public int PORT = 1006;
@@ -65,25 +65,27 @@ public class Client {
 	public final static String DEL_ALL_OPT = "dl";
 	public final static String DEL_SINGLE = "delsingle";
 	public final static String DEL_SINGLE_OPT = "ds";
-	public final static String UP = "up";
-	public final static String UP_OPT = "u";
+	public final static String SHUTDOWN_ALL = "shutdownall";
+	public final static String SHUTDOWN_ALL_OPT = "sda";
+	public final static String SHUTDOWN_SINGLE = "shutdownsingle";
+	public final static String SHUTDOWN_SINGLE_OPT = "sds";
 	public final static String QUIT = "quit";
 	public final static String QUIT_OPT = "q";
 	public final static String VERSION = "version";
 	public final static String VERSION_OPT = "v";
 	public final static String HELP = "help";
 	public final static String HELP_OPT = "h";
-	
+
 	@SuppressWarnings("static-access")
 	private static Options createOptions() {
 		Options options = new Options();
 		Option help = new Option(HELP_OPT, HELP, false, "Help!!");
 
 		Option app_version = new Option(VERSION_OPT, VERSION, false, "Get build version, which is a date and time");
-		Option devicelist = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false).withLongOpt(DEVICES_LIST)
-				.withDescription("XML file with devices").create(DEVICES_LIST_OPT);
-		Option settings = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false).withLongOpt(SETTINGS_INPUT)
-				.withDescription("XML file with settings").create(SETTINGS_INPUT_OPT);
+		Option devicelist = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false)
+				.withLongOpt(DEVICES_LIST).withDescription("XML file with devices").create(DEVICES_LIST_OPT);
+		Option settings = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false)
+				.withLongOpt(SETTINGS_INPUT).withDescription("XML file with settings").create(SETTINGS_INPUT_OPT);
 		Option list = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(LIST)
 				.withDescription("List all devices").create(LIST_OPT);
 		options.addOption(devicelist);
@@ -93,7 +95,7 @@ public class Client {
 		options.addOption(app_version);
 		return options;
 	}
-	
+
 	@SuppressWarnings("static-access")
 	private static Options createCommandOptions() {
 		Options options = new Options();
@@ -102,34 +104,38 @@ public class Client {
 				.withDescription("List all devices").create(LIST_OPT);
 		Option collectall = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(COLLECT_ALL)
 				.withDescription("Collect all logs from connected devices").create(COLLECT_ALL_OPT);
-		Option collectsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false).withLongOpt(COLLECT_SINGLE)
-				.withDescription("Collect log from single device").create(COLLECT_SINGLE_OPT);
+		Option collectsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(true)
+				.withLongOpt(COLLECT_SINGLE).withDescription("Collect log from single device")
+				.create(COLLECT_SINGLE_OPT);
 		Option deleteall = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(DEL_ALL)
 				.withDescription("Delete all logs from connected devices").create(DEL_ALL_OPT);
-		Option deletesingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false).withLongOpt(DEL_SINGLE)
-				.withDescription("Delete log from single device").create(DEL_SINGLE_OPT);
-		Option up = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(UP)
-				.withDescription("Go up (back if you like)").create(UP_OPT);
-		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT)
-				.withDescription("Quit").create(QUIT_OPT);
+		Option deletesingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
+				.withLongOpt(DEL_SINGLE).withDescription("Delete log from single device").create(DEL_SINGLE_OPT);
+		Option shutdownall = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(SHUTDOWN_ALL)
+				.withDescription("Shutdown collection services on all devices").create(SHUTDOWN_ALL_OPT);
+		Option shutdownsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
+				.withLongOpt(SHUTDOWN_SINGLE).withDescription("Shutdown collection services on a device").create(SHUTDOWN_SINGLE_OPT);
+		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
+				.create(QUIT_OPT);
 		options.addOption(help);
 		options.addOption(list);
 		options.addOption(collectall);
 		options.addOption(collectsingle);
 		options.addOption(deleteall);
 		options.addOption(deletesingle);
-		options.addOption(up);
+		options.addOption(shutdownall);
+		options.addOption(shutdownsingle);
 		options.addOption(quit);
 
 		return options;
 	}
-	
+
 	private static void showHelp(Options options) {
 		HelpFormatter h = new HelpFormatter();
 		h.printHelp(HELP, options);
 		System.exit(-1);
 	}
-	
+
 	public static void main(String[] args) {
 		Options options = createOptions();
 		try {
@@ -141,11 +147,11 @@ public class Client {
 				String pDevices = cmd.getOptionValue(DEVICES_LIST_OPT);
 				String pSettings = cmd.getOptionValue(SETTINGS_INPUT_OPT);
 				execute(pDevices, pSettings);
-			}else if (cmd.hasOption(SETTINGS_INPUT_OPT)){
+			} else if (cmd.hasOption(SETTINGS_INPUT_OPT)) {
 				String pDevices = cmd.getOptionValue(DEVICES_LIST_OPT);
 				String pSettings = cmd.getOptionValue(SETTINGS_INPUT_OPT);
 				execute(pDevices, pSettings);
-			}else if (cmd.hasOption(LIST_OPT)){
+			} else if (cmd.hasOption(LIST_OPT)) {
 				log.info("Not supported yet!");
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
@@ -155,15 +161,15 @@ public class Client {
 			showHelp(options);
 		}
 	}
-	
-	public static void execute(String pDevices, String pSettings){
+
+	public static void execute(String pDevices, String pSettings) {
 		if (pDevices != null && pSettings != null) {
 			pDevices = pDevices.trim();
 			pSettings = pSettings.trim();
 			log.info("Using device file: {}", pDevices);
 			log.info("Using setting file: {}", pSettings);
 			new Client(pDevices, pSettings);
-		}else{
+		} else {
 			log.info("Could not read inputs, check they are all present. Or call help");
 		}
 	}
@@ -172,13 +178,13 @@ public class Client {
 		String version = this.getClass().getPackage().getImplementationVersion();
 		log.info("Started LogForwardClient Version: {}", version);
 		this.COMMAND_OPTIONS = createCommandOptions();
-		
+
 		this.readInSettings(pDeviceFile, pSettingFile);
 		this.LOG_MANAGER = new LogManagerClient(this.VERSIONCODE);
 		this.ADDRESS = new InetSocketAddress(this.PORT);
 		try {
-			this.CLIENT_SELECTOR = new CustomClientSelector("Client Selector", this.ADDRESS, this.BUFFER, this.SERVER_PORT,
-					this.LOG_MANAGER);
+			this.CLIENT_SELECTOR = new CustomClientSelector("Client Selector", this.ADDRESS, this.BUFFER,
+					this.SERVER_PORT, this.LOG_MANAGER);
 			new Thread(this.CLIENT_SELECTOR).start();
 		} catch (IOException e) {
 			log.error("Error creating selector", e);
@@ -289,14 +295,14 @@ public class Client {
 	}
 
 	public void process() {
-		String CurLine = ""; // Line read from standard in
 		InputStreamReader converter = new InputStreamReader(System.in);
 		BufferedReader in = new BufferedReader(converter);
 		try {
 			while (true) {
 				System.out.print("main Input: ");
-				CurLine = in.readLine();
-
+				String[] pInput = in.readLine().split(" ");
+				this.readfromline(pInput);
+				/*
 				if (CurLine.equals("quit")) {
 					System.exit(0);
 				} else if (CurLine.equals("collect-all")) {
@@ -307,215 +313,146 @@ public class Client {
 					this.REQUESTER.deleteAll();
 				} else if (CurLine.equals("del-single")) {
 					this.deleteSingle(in);
-				}else if (CurLine.equals("shutdown-all")) {
+				} else if (CurLine.equals("shutdown-all")) {
 					this.REQUESTER.shutdownAll();
 				} else if (CurLine.equals("shutdown-single")) {
 					this.shutdownSingle(in);
 				}
+				*/
 			}
 		} catch (IOException e) {
 			log.error("Error somewhere: ", e);
 		}
 	}
 
-	public void collectSingle(BufferedReader in) throws IOException {
-		String CurLine = "";
+	protected void readfromline(String[] pInput) {
 		try {
-			System.out.println("Collect from Whom? : ");
-			Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
-			while (entries.hasNext()) {
-				Map.Entry<String, Device> entry = entries.next();
-				Device device = entry.getValue();
-				log.info("ID: {} Name: {}", device.getID(), device.getName());
-			}
-			CurLine = in.readLine();
-			if (CurLine.equals("quit")) {
-				System.exit(0);
-			} else if (CurLine.equals("up")) {
-				return;
-			} else {
-				try {
-					int index = Integer.valueOf(CurLine);
-					boolean found = false;
-					entries = this.DEVICES.entrySet().iterator();
-					while (entries.hasNext()) {
-						Map.Entry<String, Device> entry = entries.next();
-						Device device = entry.getValue();
-						if (device.getID() == index) {
-							found = true;
-							this.REQUESTER.getSingle(device);
-						}
-					}
-					if (!found) {
-						log.warn("Could not find device to request from");
-					}
-				} catch (NumberFormatException e) {
-					log.error("Could not get a number, going up..^");
-					return;
+			CommandLineParser parser = new PosixParser();
+			CommandLine cmd = parser.parse(this.COMMAND_OPTIONS, pInput);
+			if (cmd.hasOption(HELP_OPT)) {
+				showHelp(this.COMMAND_OPTIONS);
+			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
+				this.REQUESTER.getAll();
+			} else if (cmd.hasOption(COLLECT_SINGLE_OPT)) {
+				final String pDeviceString = cmd.getOptionValue(COLLECT_SINGLE_OPT);
+				if (pDeviceString != null) {
+					this.collectSingle(pDeviceString);
+				}else{
+					log.info("No device ID supplied with command: {}", COLLECT_SINGLE);
 				}
+			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
+				this.REQUESTER.getAll();
+			} else if (cmd.hasOption(DEL_SINGLE_OPT)) {
+				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
+				if (pDeviceString != null) {
+					this.deleteSingle(pDeviceString);
+				}else{
+					log.info("No device ID supplied with command: {}", DEL_SINGLE);
+				}
+			} else if (cmd.hasOption(DEL_ALL_OPT)) {
+				this.REQUESTER.deleteAll();
+			} else if (cmd.hasOption()) {
+				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
+				if (pDeviceString != null) {
+					this.deleteSingle(pDeviceString);
+				}else{
+					log.info("No device ID supplied with command: {}", DEL_SINGLE);
+				}
+			} else if (cmd.hasOption(DEL_ALL_OPT)) {
+				this.REQUESTER.deleteAll();
+			} else if (cmd.hasOption(LIST_OPT)) {
+				log.info("Not supported yet!");
+			} else if (cmd.hasOption(VERSION_OPT)) {
+				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
+			showHelp(this.COMMAND_OPTIONS);
 		}
 	}
 
-	public void deleteSingle(BufferedReader in) throws IOException {
-		String CurLine = "";
-		try {
-			System.out.println("Delete from Whom? : ");
-			Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
-			while (entries.hasNext()) {
-				Map.Entry<String, Device> entry = entries.next();
-				Device device = entry.getValue();
-				log.info("ID: {} Name: {}", device.getID(), device.getName());
+	protected Device getDevice(final int pDeviceNumber) {
+		Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
+		while (entries.hasNext()) {
+			Map.Entry<String, Device> entry = entries.next();
+			Device device = entry.getValue();
+			if (device.getID() == pDeviceNumber) {
+				return device;
 			}
-			CurLine = in.readLine();
-			if (CurLine.equals("quit")) {
-				System.exit(0);
-			} else if (CurLine.equals("up")) {
-				return;
-			} else {
-				try {
-					int index = Integer.valueOf(CurLine);
-					boolean found = false;
-					entries = this.DEVICES.entrySet().iterator();
-					while (entries.hasNext()) {
-						Map.Entry<String, Device> entry = entries.next();
-						Device device = entry.getValue();
-						if (device.getID() == index) {
-							found = true;
-							this.REQUESTER.deleteSingle(device);
-						}
-					}
-					if (!found) {
-						log.warn("Could not find device to request delete from");
-					}
-				} catch (NumberFormatException e) {
-					log.error("Could not get a number, going up..^");
-					return;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
+		log.warn("Could not find device: {} in device list", pDeviceNumber);
+		return null;
 	}
-	
-	public void shutdownSingle(BufferedReader in) throws IOException {
-		String CurLine = "";
+
+	protected void collectSingle(final String pDevice) {
 		try {
-			System.out.println("Delete from Whom? : ");
-			Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
-			while (entries.hasNext()) {
-				Map.Entry<String, Device> entry = entries.next();
-				Device device = entry.getValue();
-				log.info("ID: {} Name: {}", device.getID(), device.getName());
-			}
-			CurLine = in.readLine();
-			if (CurLine.equals("quit")) {
-				System.exit(0);
-			} else if (CurLine.equals("up")) {
-				return;
-			} else {
-				try {
-					int index = Integer.valueOf(CurLine);
-					boolean found = false;
-					entries = this.DEVICES.entrySet().iterator();
-					while (entries.hasNext()) {
-						Map.Entry<String, Device> entry = entries.next();
-						Device device = entry.getValue();
-						if (device.getID() == index) {
-							found = true;
-							this.REQUESTER.shutdownSingle(device);
-						}
-					}
-					if (!found) {
-						log.warn("Could not find device to request delete from");
-					}
-				} catch (NumberFormatException e) {
-					log.error("Could not get a number, going up..^");
-					return;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+			final int pDeviceNo = Integer.parseInt(pDevice);
+			this.collectSingle(pDeviceNo);
+		} catch (NumberFormatException e) {
+			log.error("Could not get a number, going up..^");
+			return;
 		}
 	}
 
-	/*
-			public static void tcpCommand(BufferedReader in) {
-				String CurLine = "";
-				try {
-					System.out.print("TCP : ");
-					CurLine = in.readLine();
-					if (CurLine.equals("quit")) {
-						System.exit(0);
-					} else if (CurLine.equals("connect")) {
-						connectProcess(in);
-					} else if (CurLine.equals("send")) {
-						System.out.print("Send : ");
-						CurLine = in.readLine();
-						if (CurLine.equals("up")) {
-							return;
-						} else {
-							byte[] pBytes = CurLine.getBytes();
-							send(in, pBytes);
-							return;
-						}
-					}
-				} catch (IOException e) {
-					System.out.println("error");
-					e.printStackTrace();
-				}
-			}
+	protected void collectSingle(final int pDevice) {
+		Device pDeviceObj = this.getDevice(pDevice);
+		this.collectSingle(pDeviceObj);
+	}
 
-			public static void connectProcess(BufferedReader in) {
-				String CurLine = "";
-				try {
-					System.out.print("Connect : ");
-					CurLine = in.readLine();
-					if (CurLine.equals("quit")) {
-						System.exit(0);
-					} else {
-						int port = getPort(CurLine);
-						String ip = getIP(CurLine);
-						if (port != -1) {
-							System.out.println("Found: " + ip + " " + port);
-							host host = new host(ip, port);
-							mHosts.add(host);
-							connect(ip, port);
-						}
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+	protected void collectSingle(final Device pDevice) {
+		if (pDevice != null) {
+			this.REQUESTER.getSingle(pDevice);
+		} else {
+			log.info("Could not find a device with that ID");
+		}
+	}
 
-			public static String getIP(String pLine) {
-				int firstColon = pLine.indexOf(":");
-				firstColon++;
-				int portColon = pLine.lastIndexOf(":");
-				portColon--;
-				String found = pLine.substring(firstColon, portColon);
-				found.trim();
-				return found;
-			}
+	protected void deleteSingle(final String pDevice) {
+		try {
+			final int pDeviceNo = Integer.parseInt(pDevice);
+			this.deleteSingle(pDeviceNo);
+		} catch (NumberFormatException e) {
+			log.error("Could not get a number, going up..^");
+			return;
+		}
+	}
 
-			public static int getPort(String pLine) {
-				int portColon = pLine.lastIndexOf(":");
-				portColon++;
-				String found = pLine.substring(portColon);
-				found.trim();
-				try {
-					return Integer.valueOf(found);
-				} catch (NumberFormatException er) {
-					return -1;
-				}
-			}
+	protected void deleteSingle(final int pDevice) {
+		Device pDeviceObj = this.getDevice(pDevice);
+		this.deleteSingle(pDeviceObj);
+	}
 
-			public static void connect(String pIP, int pPort) throws IOException {
-			
-			}
-		*/
+	protected void deleteSingle(final Device pDevice) {
+		if (pDevice != null) {
+			this.REQUESTER.deleteSingle(pDevice);
+		} else {
+			log.info("Could not find a device with that ID");
+		}
+	}
+
+	protected void shutdownSingle(final String pDevice) {
+		try {
+			final int pDeviceNo = Integer.parseInt(pDevice);
+			this.deleteSingle(pDeviceNo);
+		} catch (NumberFormatException e) {
+			log.error("Could not get a number, going up..^");
+			return;
+		}
+	}
+
+	protected void shutdownSingle(final int pDevice) {
+		Device pDeviceObj = this.getDevice(pDevice);
+		this.deleteSingle(pDeviceObj);
+	}
+
+	protected void shutdownSingle(final Device pDevice) {
+		if (pDevice != null) {
+			this.REQUESTER.shutdownSingle(pDevice);
+		} else {
+			log.info("Could not find a device with that ID");
+		}
+	}
+
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
