@@ -220,10 +220,15 @@ public class Requester implements ILogOwner {
 	protected <T extends IMessage> void handleDeleteResponse(T pMessage) {
 		MessageDeleteResponse response = (MessageDeleteResponse) pMessage;
 		boolean deleted = response.getDeleted();
-		if (deleted) {
-			log.info("Seq: {} was deleted", response.getSequence());
-		} else {
-			log.warn("Seq: {} was NOT deleted", response.getSequence());
+		Device device = this.mRequestDeviceCrossRef.get(pMessage.getSequence());
+		if(device != null){
+			if(deleted){
+				log.info("DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(), device.getFileName());
+			}else{
+				log.info("NOT DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(), device.getFileName());
+			}
+		}else{
+			log.warn("Could not locate device for message sequence: {}", pMessage.getSequence());
 		}
 		this.mRequests.remove(pMessage.getSequence());
 		this.mRequestDeviceCrossRef.remove(pMessage.getSequence());
