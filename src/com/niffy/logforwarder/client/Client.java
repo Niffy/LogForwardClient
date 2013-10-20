@@ -351,7 +351,7 @@ public class Client {
 				}
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
 				this.REQUESTER.deleteAll();
-			} else if (cmd.hasOption()) {
+			} else if (cmd.hasOption(DEL_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
 					this.deleteSingle(pDeviceString);
