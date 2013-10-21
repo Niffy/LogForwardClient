@@ -35,7 +35,7 @@ public class Requester implements ILogOwner {
 	// Fields
 	// ===========================================================
 	protected ClientSelector mSelector;
-	protected HashMap<String, Device> mDevices = new HashMap<String, Device>();
+	protected ArrayList<Device> mDevices = new ArrayList<Device>();
 	protected Setting mSetting;
 	protected AtomicInteger mSeq = new AtomicInteger();
 	protected int mVersion = -1;
@@ -52,7 +52,7 @@ public class Requester implements ILogOwner {
 	// Constructors
 	// ===========================================================
 
-	public Requester(final ClientSelector pSelector, final HashMap<String, Device> pDevices, final Setting pSetting,
+	public Requester(final ClientSelector pSelector, final ArrayList<Device> pDevices, final Setting pSetting,
 			final int pVersion) {
 		this.mSelector = pSelector;
 		this.mDevices = pDevices;
@@ -76,8 +76,8 @@ public class Requester implements ILogOwner {
 	// Methods
 	// ===========================================================
 	public void getAll() {
-		ArrayList<String> Devices = this.mSetting.getDevices();
-		for (String key : Devices) {
+		ArrayList<Integer> Devices = this.mSetting.getDevices();
+		for (Integer key : Devices) {
 			Device device = this.mDevices.get(key);
 			if (device != null) {
 				this.queueGetRequest(device);
@@ -92,8 +92,8 @@ public class Requester implements ILogOwner {
 	}
 
 	public void deleteAll() {
-		ArrayList<String> Devices = this.mSetting.getDevices();
-		for (String key : Devices) {
+		ArrayList<Integer> Devices = this.mSetting.getDevices();
+		for (Integer key : Devices) {
 			Device device = this.mDevices.get(key);
 			if (device != null) {
 				this.queueDeleteRequest(device);
@@ -108,8 +108,8 @@ public class Requester implements ILogOwner {
 	}
 
 	public void shutdownAll() {
-		ArrayList<String> Devices = this.mSetting.getDevices();
-		for (String key : Devices) {
+		ArrayList<Integer> Devices = this.mSetting.getDevices();
+		for (Integer key : Devices) {
 			Device device = this.mDevices.get(key);
 			if (device != null) {
 				this.queueShutdownRequest(device);

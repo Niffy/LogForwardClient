@@ -22,14 +22,14 @@ public class Setting {
 	protected String mStoragePath;
 	protected String mFileNamePath;
 	protected boolean mSDCard;
-	protected ArrayList<String> mDevices;
+	protected ArrayList<Integer> mDevices;
 
 	// ===========================================================
 	// Constructors
 	// ===========================================================
 
 	public Setting() {
-		this.mDevices = new ArrayList<String>();
+		this.mDevices = new ArrayList<Integer>();
 	}
 
 	// ===========================================================
@@ -96,11 +96,11 @@ public class Setting {
 		this.mSDCard = sDCard;
 	}
 
-	public ArrayList<String> getDevices() {
+	public ArrayList<Integer> getDevices() {
 		return this.mDevices;
 	}
 
-	public void addDevices(String device) {
+	public void addDevices(Integer device) {
 		this.mDevices.add(device);
 	}
 	// ===========================================================

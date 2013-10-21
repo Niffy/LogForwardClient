@@ -1,5 +1,6 @@
 package com.niffy.logforwarder.client.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.slf4j.Logger;
@@ -21,9 +22,9 @@ public class DeviceParser extends DefaultHandler {
 	// Fields
 	// ===========================================================
 	protected final StringBuilder mStringBuilder = new StringBuilder();
-	protected HashMap<String, Device> mDevices = new HashMap<String, Device>();
+	protected ArrayList<Device> mDevices = new ArrayList<Device>();
 	protected Device tempObject = new Device();
-
+	protected int mHighestID = 0;
 	// ===========================================================
 	// Constructors
 	// ===========================================================
@@ -61,9 +62,12 @@ public class DeviceParser extends DefaultHandler {
 		if (qName.equals(DeviceTags.DEVICE_DEVICES)) {
 			//IGNORE
 		} else if (qName.equals(DeviceTags.DEVICE_DEVICE)) {
-			this.mDevices.put(tempObject.getName(), tempObject);
+			this.mDevices.add(tempObject.getID(), tempObject);
 		} else if (qName.equals(DeviceTags.DEVICE_ID)) {
 			tempObject.setID(Integer.parseInt(this.mStringBuilder.toString().trim()));
+			if(this.tempObject.getID() > this.mHighestID){
+				this.mHighestID = this.tempObject.getID();
+			}
 		} else if (qName.equals(DeviceTags.DEVICE_NAME)) {
 			tempObject.setName(this.mStringBuilder.toString().trim());
 		} else if (qName.equals(DeviceTags.DEVICE_IP)) {
@@ -86,8 +90,17 @@ public class DeviceParser extends DefaultHandler {
 	// ===========================================================
 	// Getter & Setter
 	// ===========================================================
-	public HashMap<String, Device> getDevices() {
+	public ArrayList<Device> getDevices() {
 		return this.mDevices;
+	}
+	
+	
+	/**
+	 * Get the highest ID found.
+	 * @return
+	 */
+	public int getHighestID(){
+		return this.mHighestID;
 	}
 	// ===========================================================
 	// Methods

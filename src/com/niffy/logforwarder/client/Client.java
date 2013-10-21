@@ -47,7 +47,7 @@ public class Client {
 	public int SERVER_PORT = 1088;
 	public ILogManager LOG_MANAGER;
 	public int VERSIONCODE = 0;
-	public HashMap<String, Device> DEVICES = new HashMap<String, Device>();
+	public ArrayList<Device> DEVICES = new ArrayList<Device>();
 	public ArrayList<Setting> SETTINGS = new ArrayList<Setting>();
 	public Requester REQUESTER;
 	public Options COMMAND_OPTIONS;
@@ -89,6 +89,7 @@ public class Client {
 	public final static String UPDATE = "update";
 	public final static String UPDATE_OPT = "u";
 	public final static String ID = "id";
+	public final static String DEVICEID = "deviceid";
 	public final static String NAME = "name";
 	public final static String NAME_OPT = "n";
 	public final static String BUFFERSIZE = "buffer";
@@ -170,6 +171,8 @@ public class Client {
 				.withDescription("Update a setting profile").create(UPDATE_OPT);
 		Option id = OptionBuilder.hasArg(true).withArgName("setting id(int)").isRequired(false)
 				.withDescription("Setting profile ID").create(ID);
+		Option deviceid = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
+				.withDescription("device ID").create(DEVICEID);
 		Option name = OptionBuilder.hasArg(true).withArgName("String").isRequired(false).withLongOpt(NAME)
 				.withDescription("Set profile name").create(NAME_OPT);
 		Option buffer = OptionBuilder.hasArg(true).withArgName("int").isRequired(false).withLongOpt(BUFFERSIZE)
@@ -191,6 +194,7 @@ public class Client {
 		options.addOption(delete);
 		options.addOption(update);
 		options.addOption(id);
+		options.addOption(deviceid);
 		options.addOption(name);
 		options.addOption(buffer);
 		options.addOption(port);
@@ -344,10 +348,7 @@ public class Client {
 
 	protected void loopDevices() {
 		log.debug("Looping Devices: {}", this.DEVICES.size());
-		Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
-		while (entries.hasNext()) {
-			Map.Entry<String, Device> entry = entries.next();
-			Device device = entry.getValue();
+		for (Device device : this.DEVICES) {
 			Object[] array = { device.getID(), device.getName(), device.getAddress(), device.getPort(),
 					device.getFileName() };
 			log.debug("Device ID: {} Name: {} Address: {}  Port: {} Filename: {}", array);
@@ -361,9 +362,9 @@ public class Client {
 					setting.getStoragePath(), setting.getFileNamePath(), setting.getSDCard() };
 			log.debug("Setting. ID: {} Name: {} Buffer: {} Port: {} storagePath: {} FileNamePath: {} SDCard: {} ",
 					array);
-			ArrayList<String> Devices = setting.getDevices();
-			for (String string : Devices) {
-				log.debug("Device: {}", string);
+			ArrayList<Integer> Devices = setting.getDevices();
+			for (Integer id : Devices) {
+				log.debug("Device: {}", id);
 			}
 		}
 	}
@@ -496,10 +497,7 @@ public class Client {
 	}
 
 	protected Device getDevice(final int pDeviceNumber) {
-		Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
-		while (entries.hasNext()) {
-			Map.Entry<String, Device> entry = entries.next();
-			Device device = entry.getValue();
+		for (Device device : this.DEVICES) {
 			if (device.getID() == pDeviceNumber) {
 				return device;
 			}
@@ -579,10 +577,7 @@ public class Client {
 
 	protected void listDevices() {
 		StringBuilder builder = new StringBuilder();
-		Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
-		while (entries.hasNext()) {
-			Map.Entry<String, Device> entry = entries.next();
-			Device device = entry.getValue();
+		for (Device device : this.DEVICES) {
 			builder.append("ID: ");
 			builder.append(device.getID());
 			builder.append(" Device: ");

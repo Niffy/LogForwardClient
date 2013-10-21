@@ -94,7 +94,7 @@ public class SettingsParser extends DefaultHandler {
 		} else if (qName.equals(SettingsTags.SETTINGS_DEVICES)) {
 			// Nothing to add
 		} else if (qName.equals(SettingsTags.SETTINGS_DEVICES_DEVICE)) {
-			this.tempObject.addDevices(this.mStringBuilder.toString().trim());
+			this.tempObject.addDevices(Integer.parseInt(this.mStringBuilder.toString().trim()));
 		} else {
 			log.warn("Unknown end element in settings parser: {}", qName);
 		}
