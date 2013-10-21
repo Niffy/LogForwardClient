@@ -48,7 +48,7 @@ public class Client {
 	public ILogManager LOG_MANAGER;
 	public int VERSIONCODE = 0;
 	public HashMap<String, Device> DEVICES = new HashMap<String, Device>();
-	public HashMap<Integer, Setting> SETTINGS = new HashMap<Integer, Setting>();
+	public ArrayList<Setting> SETTINGS = new ArrayList<Setting>();
 	public Requester REQUESTER;
 	public Options COMMAND_OPTIONS;
 	public Options SETTING_OPTIONS;
@@ -353,13 +353,11 @@ public class Client {
 
 	protected void loopSettings() {
 		log.debug("Looping Settings: {}", this.SETTINGS.size());
-		Iterator<Map.Entry<Integer, Setting>> entries = this.SETTINGS.entrySet().iterator();
-		while (entries.hasNext()) {
-			Map.Entry<Integer, Setting> entry = entries.next();
-			Setting setting = entry.getValue();
-			Object[] array = { setting.getName(), setting.getBuffer(), setting.getServerPort(),
+		for (Setting setting : this.SETTINGS) {
+			Object[] array = { setting.getID(), setting.getName(), setting.getBuffer(), setting.getServerPort(),
 					setting.getStoragePath(), setting.getFileNamePath(), setting.getSDCard() };
-			log.debug("Setting. ID: {} Name: {} Buffer: {} Port: {} storagePath: {} FileNamePath: {} SDCard: {} ", array);
+			log.debug("Setting. ID: {} Name: {} Buffer: {} Port: {} storagePath: {} FileNamePath: {} SDCard: {} ",
+					array);
 			ArrayList<String> Devices = setting.getDevices();
 			for (String string : Devices) {
 				log.debug("Device: {}", string);
@@ -597,12 +595,9 @@ public class Client {
 		}
 	}
 
-	protected void listSettings(){
+	protected void listSettings() {
 		StringBuilder builder = new StringBuilder();
-		Iterator<Map.Entry<Integer, Setting>> entries = this.SETTINGS.entrySet().iterator();
-		while (entries.hasNext()) {
-			Map.Entry<Integer, Setting> entry = entries.next();
-			Setting setting = entry.getValue();
+		for (Setting setting : this.SETTINGS) {
 			builder.append(" ID: ");
 			builder.append(setting.getID());
 			builder.append(" Name: ");
@@ -623,7 +618,7 @@ public class Client {
 			builder.setLength(0);
 		}
 	}
-	
+
 	protected void createSetting(final String pName, final String pBuffer, final String pPort,
 			final String pStoragePath, final String pFileNamePath, final String pSDCard) {
 		final int buffer = (pBuffer == null) ? this.BUFFER : Integer.parseInt(pBuffer);
@@ -648,7 +643,7 @@ public class Client {
 			setting.setFileNamePath(pFileNamePath);
 			setting.setStoragePath(pStoragePath);
 			setting.setSDCard(sdcard);
-			this.SETTINGS.put(setting.getID(), setting);
+			this.SETTINGS.add(setting.getID(), setting);
 		}
 	}
 

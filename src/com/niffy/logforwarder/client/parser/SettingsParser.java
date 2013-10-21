@@ -1,6 +1,6 @@
 package com.niffy.logforwarder.client.parser;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ public class SettingsParser extends DefaultHandler {
 	// Fields
 	// ===========================================================
 	protected final StringBuilder mStringBuilder = new StringBuilder();
-	protected HashMap<Integer, Setting> mSettings = new HashMap<Integer, Setting>();
+	protected ArrayList<Setting> mSettings = new ArrayList<Setting>();
 	protected Setting tempObject = new Setting(); 
 	protected int mHighestID = 0;
 	// ===========================================================
@@ -73,7 +73,7 @@ public class SettingsParser extends DefaultHandler {
 		if (qName.equals(SettingsTags.SETTINGS_SETTINGS)) {
 			// Do nothing
 		} else if (qName.equals(SettingsTags.SETTINGS_SETTING)) {
-			this.mSettings.put(tempObject.getID(), tempObject);
+			this.mSettings.add(tempObject.getID(), tempObject);
 		} else if (qName.equals(SettingsTags.SETTINGS_ID)) {
 			this.tempObject.setID(Integer.parseInt(this.mStringBuilder.toString().trim()));
 			if(this.tempObject.getID() > this.mHighestID){
@@ -109,7 +109,7 @@ public class SettingsParser extends DefaultHandler {
 	// ===========================================================
 	// Getter & Setter
 	// ===========================================================
-	public HashMap<Integer, Setting> getSettings() {
+	public ArrayList<Setting> getSettings() {
 		return this.mSettings;
 	}
 	
