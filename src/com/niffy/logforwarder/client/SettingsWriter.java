@@ -47,6 +47,8 @@ public class SettingsWriter {
 				}
 				writer.writeEndElement();
 				writer.writeEndDocument();
+				writer.flush();
+				writer.close();
 			} catch (XMLStreamException e) {
 				log.error("Error writing to XML file.", e);
 			}

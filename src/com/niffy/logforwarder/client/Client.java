@@ -53,6 +53,8 @@ public class Client {
 	public Options COMMAND_OPTIONS;
 	public Options SETTING_OPTIONS;
 	public AtomicInteger IDTOUSE;
+	public String SETTING_FILE;
+	public String DEVICE_FILE;
 
 	public final static String DEVICES_LIST = "devicelist";
 	public final static String DEVICES_LIST_OPT = "dl";
@@ -248,6 +250,8 @@ public class Client {
 	public Client(final String pDeviceFile, final String pSettingFile) {
 		String version = this.getClass().getPackage().getImplementationVersion();
 		log.info("Started LogForwardClient Version: {}", version);
+		this.SETTING_FILE = pSettingFile;
+		this.DEVICE_FILE = pDeviceFile;
 		this.COMMAND_OPTIONS = createCommandOptions();
 		this.SETTING_OPTIONS = createSettingOptions();
 
@@ -665,9 +669,9 @@ public class Client {
 	}
 
 	protected void writeSettings() {
-		/*
-		 * TODO write settings to file!
-		 */
+		log.info("Writing settings to file");
+		SettingsWriter writer = new SettingsWriter(this.SETTING_FILE);
+		writer.write(this.SETTINGS);
 	}
 	// ===========================================================
 	// Inner and Anonymous Classes
