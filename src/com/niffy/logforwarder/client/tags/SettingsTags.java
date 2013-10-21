@@ -6,6 +6,7 @@ public class SettingsTags {
 	// ===========================================================
 	public static final String SETTINGS_SETTINGS = "settings";
 	public static final String SETTINGS_SETTING = "setting";
+	public static final String SETTINGS_ID = "id";
 	public static final String SETTINGS_NAME = "name";
 	public static final String SETTINGS_BUFFER = "buffer";
 	public static final String SETTINGS_SERVER_PORT = "serverport";

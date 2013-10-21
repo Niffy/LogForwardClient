@@ -15,6 +15,7 @@ public class Setting {
 	// ===========================================================
 	// Fields
 	// ===========================================================
+	protected int mID;
 	protected String mName;
 	protected int mBuffer;
 	protected int mServerPort;
@@ -39,6 +40,14 @@ public class Setting {
 	// Getter & Setter
 	// ===========================================================
 
+	public int getID(){
+		return this.mID;
+	}
+	
+	public void setID(final int pID){
+		this.mID = pID;
+	}
+	
 	public String getName() {
 		return this.mName;
 	}

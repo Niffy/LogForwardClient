@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -47,10 +48,11 @@ public class Client {
 	public ILogManager LOG_MANAGER;
 	public int VERSIONCODE = 0;
 	public HashMap<String, Device> DEVICES = new HashMap<String, Device>();
-	public HashMap<String, Setting> SETTINGS = new HashMap<String, Setting>();
+	public HashMap<Integer, Setting> SETTINGS = new HashMap<Integer, Setting>();
 	public Requester REQUESTER;
 	public Options COMMAND_OPTIONS;
 	public Options SETTING_OPTIONS;
+	public AtomicInteger IDTOUSE;
 
 	public final static String DEVICES_LIST = "devicelist";
 	public final static String DEVICES_LIST_OPT = "dl";
@@ -259,7 +261,7 @@ public class Client {
 		} catch (IOException e) {
 			log.error("Error creating selector", e);
 		}
-		this.REQUESTER = new Requester(CLIENT_SELECTOR, DEVICES, SETTINGS.get("Isometric world"), VERSIONCODE);
+		this.REQUESTER = new Requester(CLIENT_SELECTOR, DEVICES, SETTINGS.get(0), VERSIONCODE);
 		this.LOG_MANAGER.setSelector(CLIENT_SELECTOR);
 		this.process();
 	}
@@ -327,6 +329,7 @@ public class Client {
 			xr.setContentHandler(parser);
 			xr.parse(is);
 			this.SETTINGS = parser.getSettings();
+			this.IDTOUSE = new AtomicInteger(parser.getHighestID());
 		} catch (final SAXException e) {
 			log.error("SAXException loading devices", e);
 		} catch (final ParserConfigurationException e) {
@@ -350,13 +353,13 @@ public class Client {
 
 	protected void loopSettings() {
 		log.debug("Looping Settings: {}", this.SETTINGS.size());
-		Iterator<Map.Entry<String, Setting>> entries = this.SETTINGS.entrySet().iterator();
+		Iterator<Map.Entry<Integer, Setting>> entries = this.SETTINGS.entrySet().iterator();
 		while (entries.hasNext()) {
-			Map.Entry<String, Setting> entry = entries.next();
+			Map.Entry<Integer, Setting> entry = entries.next();
 			Setting setting = entry.getValue();
 			Object[] array = { setting.getName(), setting.getBuffer(), setting.getServerPort(),
 					setting.getStoragePath(), setting.getFileNamePath(), setting.getSDCard() };
-			log.debug("Setting. Name: {} Buffer: {} Port: {} storagePath: {} FileNamePath: {} SDCard: {} ", array);
+			log.debug("Setting. ID: {} Name: {} Buffer: {} Port: {} storagePath: {} FileNamePath: {} SDCard: {} ", array);
 			ArrayList<String> Devices = setting.getDevices();
 			for (String string : Devices) {
 				log.debug("Device: {}", string);
@@ -596,10 +599,12 @@ public class Client {
 
 	protected void listSettings(){
 		StringBuilder builder = new StringBuilder();
-		Iterator<Map.Entry<String, Setting>> entries = this.SETTINGS.entrySet().iterator();
+		Iterator<Map.Entry<Integer, Setting>> entries = this.SETTINGS.entrySet().iterator();
 		while (entries.hasNext()) {
-			Map.Entry<String, Setting> entry = entries.next();
+			Map.Entry<Integer, Setting> entry = entries.next();
 			Setting setting = entry.getValue();
+			builder.append(" ID: ");
+			builder.append(setting.getID());
 			builder.append(" Name: ");
 			builder.append(setting.getName());
 			builder.append(" Buffer: ");
@@ -636,16 +641,14 @@ public class Client {
 				log.info("SDcard required");
 		} else {
 			Setting setting = new Setting();
+			setting.setID(this.IDTOUSE.incrementAndGet());
 			setting.setName(pName);
 			setting.setBuffer(buffer);
 			setting.setServerPort(port);
 			setting.setFileNamePath(pFileNamePath);
 			setting.setStoragePath(pStoragePath);
 			setting.setSDCard(sdcard);
-			this.SETTINGS.put(pName, setting);
-			/*
-			 * TODO currently we're storing on name, we need to create a unique int ID for settings!
-			 */
+			this.SETTINGS.put(setting.getID(), setting);
 		}
 	}
 

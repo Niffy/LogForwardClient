@@ -21,9 +21,9 @@ public class SettingsParser extends DefaultHandler {
 	// Fields
 	// ===========================================================
 	protected final StringBuilder mStringBuilder = new StringBuilder();
-	protected HashMap<String, Setting> mSettings = new HashMap<String, Setting>();
-	protected Setting tempObject = new Setting();
-
+	protected HashMap<Integer, Setting> mSettings = new HashMap<Integer, Setting>();
+	protected Setting tempObject = new Setting(); 
+	protected int mHighestID = 0;
 	// ===========================================================
 	// Constructors
 	// ===========================================================
@@ -45,6 +45,8 @@ public class SettingsParser extends DefaultHandler {
 			// Do nothing
 		} else if (qName.equals(SettingsTags.SETTINGS_SETTING)) {
 			this.tempObject = new Setting();
+		} else if (qName.equals(SettingsTags.SETTINGS_ID)) {
+			// IGNORE do at endElement
 		} else if (qName.equals(SettingsTags.SETTINGS_NAME)) {
 			// IGNORE do at endElement
 		} else if (qName.equals(SettingsTags.SETTINGS_BUFFER)) {
@@ -71,7 +73,12 @@ public class SettingsParser extends DefaultHandler {
 		if (qName.equals(SettingsTags.SETTINGS_SETTINGS)) {
 			// Do nothing
 		} else if (qName.equals(SettingsTags.SETTINGS_SETTING)) {
-			this.mSettings.put(tempObject.getName(), tempObject);
+			this.mSettings.put(tempObject.getID(), tempObject);
+		} else if (qName.equals(SettingsTags.SETTINGS_ID)) {
+			this.tempObject.setID(Integer.parseInt(this.mStringBuilder.toString().trim()));
+			if(this.tempObject.getID() > this.mHighestID){
+				this.mHighestID = this.tempObject.getID();
+			}
 		} else if (qName.equals(SettingsTags.SETTINGS_NAME)) {
 			this.tempObject.setName(this.mStringBuilder.toString().trim());
 		} else if (qName.equals(SettingsTags.SETTINGS_BUFFER)) {
@@ -102,8 +109,16 @@ public class SettingsParser extends DefaultHandler {
 	// ===========================================================
 	// Getter & Setter
 	// ===========================================================
-	public HashMap<String, Setting> getSettings() {
+	public HashMap<Integer, Setting> getSettings() {
 		return this.mSettings;
+	}
+	
+	/**
+	 * Get the highest ID found.
+	 * @return
+	 */
+	public int getHighestID(){
+		return this.mHighestID;
 	}
 	// ===========================================================
 	// Methods
