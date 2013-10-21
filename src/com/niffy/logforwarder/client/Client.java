@@ -86,11 +86,8 @@ public class Client {
 				.withLongOpt(DEVICES_LIST).withDescription("XML file with devices").create(DEVICES_LIST_OPT);
 		Option settings = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false)
 				.withLongOpt(SETTINGS_INPUT).withDescription("XML file with settings").create(SETTINGS_INPUT_OPT);
-		Option list = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(LIST)
-				.withDescription("List all devices").create(LIST_OPT);
 		options.addOption(devicelist);
 		options.addOption(settings);
-		options.addOption(list);
 		options.addOption(help);
 		options.addOption(app_version);
 		return options;
@@ -152,8 +149,6 @@ public class Client {
 				String pDevices = cmd.getOptionValue(DEVICES_LIST_OPT);
 				String pSettings = cmd.getOptionValue(SETTINGS_INPUT_OPT);
 				execute(pDevices, pSettings);
-			} else if (cmd.hasOption(LIST_OPT)) {
-				log.info("Not supported yet! Need to read everything in first!");
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
 			} else {
@@ -164,7 +159,7 @@ public class Client {
 			showHelp(options);
 		}
 	}
-
+	
 	public static void execute(String pDevices, String pSettings) {
 		if (pDevices != null && pSettings != null) {
 			pDevices = pDevices.trim();
