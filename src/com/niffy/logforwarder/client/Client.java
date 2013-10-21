@@ -52,7 +52,9 @@ public class Client {
 	public Requester REQUESTER;
 	public Options COMMAND_OPTIONS;
 	public Options SETTING_OPTIONS;
-	public AtomicInteger IDTOUSE;
+	public Options DEVICE_OPTIONS;
+	public AtomicInteger SETTING_ID_TO_USE;
+	public AtomicInteger DEVICE_ID_TO_USE;
 	public String SETTING_FILE;
 	public String DEVICE_FILE;
 
@@ -101,7 +103,11 @@ public class Client {
 	public final static String SDCARD = "sdcard";
 	public final static String WRITE = "write";
 	public final static String WRITE_OPT = "w";
-
+	
+	public final static String DEVICEMODE = "devicemode";
+	public final static String IP = "ip";
+	public final static String FILENAME = "filename";
+	
 	@SuppressWarnings("static-access")
 	private static Options createOptions() {
 		Options options = new Options();
@@ -141,6 +147,8 @@ public class Client {
 				.create(SHUTDOWN_SINGLE_OPT);
 		Option createSetting = OptionBuilder.isRequired(false).withDescription("Enter setting mode")
 				.create(SETTINGMODE);
+		Option deviceMode = OptionBuilder.isRequired(false).withDescription("Enter device mode")
+				.create(DEVICEMODE);
 		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
 				.create(QUIT_OPT);
 		options.addOption(help);
@@ -152,6 +160,7 @@ public class Client {
 		options.addOption(shutdownall);
 		options.addOption(shutdownsingle);
 		options.addOption(createSetting);
+		options.addOption(deviceMode);
 		options.addOption(quit);
 
 		return options;
@@ -206,7 +215,48 @@ public class Client {
 		options.addOption(help);
 		return options;
 	}
-
+	
+	@SuppressWarnings("static-access")
+	private static Options createDeviceOptions(){
+		Options options = new Options();
+		Option help = new Option(HELP_OPT, HELP, false, "Help!!");
+		Option list = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(LIST)
+				.withDescription("List all devices").create(LIST_OPT);
+		Option create = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(CREATE)
+				.withDescription("Create a new setting profile").create(CREATE_OPT);
+		Option delete = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(DELETE)
+				.withDescription("Delete a setting profile").create(DELETE_OPT);
+		Option update = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(UPDATE)
+				.withDescription("Update a setting profile").create(UPDATE_OPT);
+		Option deviceid = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
+				.withDescription("device ID").create(DEVICEID);
+		Option name = OptionBuilder.hasArg(true).withArgName("String").isRequired(false).withLongOpt(NAME)
+				.withDescription("Set profile name").create(NAME_OPT);
+		Option ip = OptionBuilder.hasArg(true).withArgName("ip<String>").isRequired(false)
+				.withDescription("device IP").create(IP);
+		Option port = OptionBuilder.hasArg(true).withArgName("int").isRequired(false).withLongOpt(SERVERPORT)
+				.withDescription("The port of the device service").create(SERVERPORT_OPT);
+		Option filename = OptionBuilder.hasArg(true).withArgName("string").isRequired(false)
+				.withDescription("Name of log for devices").create(FILENAME);
+		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
+				.create(QUIT_OPT);
+		Option write = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(WRITE)
+				.withDescription("Write settings to file?").create(WRITE_OPT);
+		options.addOption(list);
+		options.addOption(create);
+		options.addOption(delete);
+		options.addOption(update);
+		options.addOption(deviceid);
+		options.addOption(name);
+		options.addOption(ip);
+		options.addOption(port);
+		options.addOption(filename);
+		options.addOption(write);
+		options.addOption(quit);
+		options.addOption(help);
+		return options;
+	}
+	
 	private static void showHelp(Options options) {
 		HelpFormatter h = new HelpFormatter();
 		h.printHelp(HELP, options);
@@ -257,7 +307,7 @@ public class Client {
 		this.DEVICE_FILE = pDeviceFile;
 		this.COMMAND_OPTIONS = createCommandOptions();
 		this.SETTING_OPTIONS = createSettingOptions();
-
+		this.DEVICE_OPTIONS = createDeviceOptions();
 		this.readInSettings(pDeviceFile, pSettingFile);
 		this.LOG_MANAGER = new LogManagerClient(this.VERSIONCODE);
 		this.ADDRESS = new InetSocketAddress(this.PORT);
@@ -304,6 +354,7 @@ public class Client {
 			xr.setContentHandler(parser);
 			xr.parse(is);
 			this.DEVICES = parser.getDevices();
+			this.DEVICE_ID_TO_USE = new AtomicInteger(parser.getHighestID());
 		} catch (final SAXException e) {
 			log.error("SAXException loading devices", e);
 		} catch (final ParserConfigurationException e) {
@@ -336,7 +387,7 @@ public class Client {
 			xr.setContentHandler(parser);
 			xr.parse(is);
 			this.SETTINGS = parser.getSettings();
-			this.IDTOUSE = new AtomicInteger(parser.getHighestID());
+			this.SETTING_ID_TO_USE = new AtomicInteger(parser.getHighestID());
 		} catch (final SAXException e) {
 			log.error("SAXException loading devices", e);
 		} catch (final ParserConfigurationException e) {
@@ -420,6 +471,8 @@ public class Client {
 				this.REQUESTER.deleteAll();
 			} else if (cmd.hasOption(SETTINGMODE)) {
 				this.settingMode();
+			} else if (cmd.hasOption(DEVICEMODE)) {
+				this.deviceMode();
 			} else if (cmd.hasOption(LIST_OPT)) {
 				this.listDevices();
 			} else if (cmd.hasOption(VERSION_OPT)) {
@@ -496,6 +549,62 @@ public class Client {
 		return true;
 	}
 
+	protected void deviceMode(){
+		log.info("Entered device mode");
+		InputStreamReader converter = new InputStreamReader(System.in);
+		BufferedReader in = new BufferedReader(converter);
+		try {
+			while (true) {
+				System.out.print("DeviceMode: ");
+				String[] pInput = in.readLine().split(" ");
+				boolean continute = this.processDeviceInput(pInput);
+				if (!continute)
+					break;
+			}
+		} catch (IOException e) {
+			log.error("Error reading in device input");
+		}
+	}
+
+	protected boolean processDeviceInput(final String[] pInput){
+		try {
+			CommandLineParser parser = new PosixParser();
+			CommandLine cmd = parser.parse(this.DEVICE_OPTIONS, pInput);
+			if (cmd.hasOption(HELP_OPT)) {
+				showHelp(this.DEVICE_OPTIONS);
+			} else if (cmd.hasOption(LIST_OPT)) {
+				this.listDevices();
+			} else if (cmd.hasOption(QUIT)) {
+				log.info("Quiting device mode");
+				return false;
+			} else if (cmd.hasOption(CREATE_OPT)) {
+				String pName = cmd.getOptionValue(NAME_OPT).trim();
+				String pIP = cmd.getOptionValue(IP).trim();
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
+				String pFileName = cmd.getOptionValue(FILENAME).trim();
+				this.createDevice(pName, pIP, pPort, pFileName);
+			} else if (cmd.hasOption(DELETE_OPT)) {
+				String pID = cmd.getOptionValue(DEVICEID).trim();
+				this.deleteDevice(pID);
+			} else if (cmd.hasOption(UPDATE_OPT)) {
+				String pID = cmd.getOptionValue(DEVICEID).trim();
+				String pName = cmd.getOptionValue(NAME_OPT).trim();
+				String pIP = cmd.getOptionValue(IP).trim();
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
+				String pFileName = cmd.getOptionValue(FILENAME).trim();
+				this.updateDevice(pID, pName, pIP, pPort, pFileName);
+			} else if (cmd.hasOption(WRITE_OPT)) {
+				this.writeDevices();
+			} else {
+				log.info("No commands selected, are you putting - before the command?");
+			}
+		} catch (Exception e) {
+			log.error("Error with command input: {}", pInput, e);
+			showHelp(this.DEVICE_OPTIONS);
+		}
+		return true;
+	}
+	
 	protected Device getDevice(final int pDeviceNumber) {
 		for (Device device : this.DEVICES) {
 			if (device.getID() == pDeviceNumber) {
@@ -634,7 +743,7 @@ public class Client {
 				log.info("SDcard required");
 		} else {
 			Setting setting = new Setting();
-			setting.setID(this.IDTOUSE.incrementAndGet());
+			setting.setID(this.SETTING_ID_TO_USE.incrementAndGet());
 			setting.setName(pName);
 			setting.setBuffer(buffer);
 			setting.setServerPort(port);
@@ -662,10 +771,51 @@ public class Client {
 		 */
 	}
 
+	protected void createDevice(final String pName, final String pIP, final String pPort, final String pFileName){
+		final int port = (pPort == null) ? this.PORT : Integer.parseInt(pPort);
+		if (pName == null || pIP == null || pFileName == null) {
+			log.info("Required attributes not found");
+			if (pName == null)
+				log.info("Name required");
+			if (pIP == null)
+				log.info("IP required");
+			if (pFileName == null)
+				log.info("File name of log required");
+		}else{
+			Device device = new Device();
+			device.setID(this.DEVICE_ID_TO_USE.incrementAndGet());
+			device.setName(pName);
+			device.setAddress(pIP);
+			device.setFileName(pFileName);
+			device.setPort(port);
+			this.DEVICES.add(device.getID(), device);
+		}
+	}
+	
+	protected void deleteDevice(final String pID){
+		if (pID == null) {
+			log.info("Cannot delete device if device ID is not passed");
+		} else {
+			/*
+			 * TODO locate device and delete, also search settings for device to delete as well.
+			 */
+		}
+	}
+	
+	protected void updateDevice(final String pID, final String pName, final String pIP, final String pPort, final String pFileName){
+		/*
+		 * TODO locate device then determine new values then update setting
+		 */
+	}
+
 	protected void writeSettings() {
 		log.info("Writing settings to file");
 		SettingsWriter writer = new SettingsWriter(this.SETTING_FILE);
 		writer.write(this.SETTINGS);
+	}
+	
+	protected void writeDevices(){
+		
 	}
 	// ===========================================================
 	// Inner and Anonymous Classes
