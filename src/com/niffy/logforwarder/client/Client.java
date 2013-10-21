@@ -50,6 +50,7 @@ public class Client {
 	public HashMap<String, Setting> SETTINGS = new HashMap<String, Setting>();
 	public Requester REQUESTER;
 	public Options COMMAND_OPTIONS;
+	public Options SETTING_OPTIONS;
 
 	public final static String DEVICES_LIST = "devicelist";
 	public final static String DEVICES_LIST_OPT = "dl";
@@ -75,6 +76,26 @@ public class Client {
 	public final static String VERSION_OPT = "v";
 	public final static String HELP = "help";
 	public final static String HELP_OPT = "h";
+
+	public final static String SETTINGMODE = "settingmode";
+	public final static String CREATE = "create";
+	public final static String CREATE_OPT = "c";
+	public final static String DELETE = "delete";
+	public final static String DELETE_OPT = "d";
+	public final static String UPDATE = "update";
+	public final static String UPDATE_OPT = "u";
+	public final static String ID = "id";
+	public final static String NAME = "name";
+	public final static String NAME_OPT = "n";
+	public final static String BUFFERSIZE = "buffer";
+	public final static String BUFFERSIZE_OPT = "b";
+	public final static String SERVERPORT = "port";
+	public final static String SERVERPORT_OPT = "p";
+	public final static String STORAGEPATH = "storagepath";
+	public final static String FILENAMEPATH = "filenamepath";
+	public final static String SDCARD = "sdcard";
+	public final static String WRITE = "write";
+	public final static String WRITE_OPT = "w";
 
 	@SuppressWarnings("static-access")
 	private static Options createOptions() {
@@ -113,6 +134,8 @@ public class Client {
 		Option shutdownsingle = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
 				.withLongOpt(SHUTDOWN_SINGLE).withDescription("Shutdown collection services on a device")
 				.create(SHUTDOWN_SINGLE_OPT);
+		Option createSetting = OptionBuilder.isRequired(false).withDescription("Enter setting mode")
+				.create(SETTINGMODE);
 		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
 				.create(QUIT_OPT);
 		options.addOption(help);
@@ -123,8 +146,56 @@ public class Client {
 		options.addOption(deletesingle);
 		options.addOption(shutdownall);
 		options.addOption(shutdownsingle);
+		options.addOption(createSetting);
 		options.addOption(quit);
 
+		return options;
+	}
+
+	@SuppressWarnings("static-access")
+	private static Options createSettingOptions() {
+		Options options = new Options();
+		Option help = new Option(HELP_OPT, HELP, false, "Help!!");
+		Option list = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(LIST)
+				.withDescription("List all devices").create(LIST_OPT);
+		Option create = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(CREATE)
+				.withDescription("Create a new setting profile").create(CREATE_OPT);
+		Option delete = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(DELETE)
+				.withDescription("Delete a setting profile").create(DELETE_OPT);
+		Option update = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(UPDATE)
+				.withDescription("Update a setting profile").create(UPDATE_OPT);
+		Option id = OptionBuilder.hasArg(true).withArgName("setting id(int)").isRequired(false)
+				.withDescription("Setting profile ID").create(ID);
+		Option name = OptionBuilder.hasArg(true).withArgName("String").isRequired(false).withLongOpt(NAME)
+				.withDescription("Set profile name").create(NAME_OPT);
+		Option buffer = OptionBuilder.hasArg(true).withArgName("int").isRequired(false).withLongOpt(BUFFERSIZE)
+				.withDescription("Buffer size for selectors?").create(BUFFERSIZE_OPT);
+		Option port = OptionBuilder.hasArg(true).withArgName("int").isRequired(false).withLongOpt(SERVERPORT)
+				.withDescription("The default port to connect to the devices").create(SERVERPORT_OPT);
+		Option storage = OptionBuilder.hasArg(true).withArgName("string").isRequired(false)
+				.withDescription("Where to store the logs collected").create(STORAGEPATH);
+		Option filenamepath = OptionBuilder.hasArg(true).withArgName("string").isRequired(false)
+				.withDescription("Name and path of log on devices").create(FILENAMEPATH);
+		Option sdcard = OptionBuilder.hasArg(true).withArgName("boolean").isRequired(false)
+				.withDescription("Is the log on external storage(Sdcard)").create(SDCARD);
+		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
+				.create(QUIT_OPT);
+		Option write = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(WRITE)
+				.withDescription("Write settings to file?").create(WRITE_OPT);
+		options.addOption(list);
+		options.addOption(create);
+		options.addOption(delete);
+		options.addOption(update);
+		options.addOption(id);
+		options.addOption(name);
+		options.addOption(buffer);
+		options.addOption(port);
+		options.addOption(storage);
+		options.addOption(filenamepath);
+		options.addOption(sdcard);
+		options.addOption(write);
+		options.addOption(quit);
+		options.addOption(help);
 		return options;
 	}
 
@@ -159,7 +230,7 @@ public class Client {
 			showHelp(options);
 		}
 	}
-	
+
 	public static void execute(String pDevices, String pSettings) {
 		if (pDevices != null && pSettings != null) {
 			pDevices = pDevices.trim();
@@ -176,6 +247,7 @@ public class Client {
 		String version = this.getClass().getPackage().getImplementationVersion();
 		log.info("Started LogForwardClient Version: {}", version);
 		this.COMMAND_OPTIONS = createCommandOptions();
+		this.SETTING_OPTIONS = createSettingOptions();
 
 		this.readInSettings(pDeviceFile, pSettingFile);
 		this.LOG_MANAGER = new LogManagerClient(this.VERSIONCODE);
@@ -341,6 +413,8 @@ public class Client {
 				}
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
 				this.REQUESTER.deleteAll();
+			} else if (cmd.hasOption(SETTINGMODE)) {
+				this.settingMode();
 			} else if (cmd.hasOption(LIST_OPT)) {
 				this.listDevices();
 			} else if (cmd.hasOption(VERSION_OPT)) {
@@ -355,6 +429,66 @@ public class Client {
 			log.error("Error with command input: {}", pInput, e);
 			showHelp(this.COMMAND_OPTIONS);
 		}
+	}
+
+	protected void settingMode() {
+		log.info("Entered setting mode");
+		InputStreamReader converter = new InputStreamReader(System.in);
+		BufferedReader in = new BufferedReader(converter);
+		try {
+			while (true) {
+				System.out.print("SettingMode: ");
+				String[] pInput = in.readLine().split(" ");
+				boolean continute = this.processSettingInput(pInput);
+				if (!continute)
+					break;
+			}
+		} catch (IOException e) {
+			log.error("Error reading in setting input");
+		}
+	}
+
+	protected boolean processSettingInput(final String[] pInput) {
+		try {
+			CommandLineParser parser = new PosixParser();
+			CommandLine cmd = parser.parse(this.SETTING_OPTIONS, pInput);
+			if (cmd.hasOption(HELP_OPT)) {
+				showHelp(this.SETTING_OPTIONS);
+			} else if (cmd.hasOption(LIST_OPT)) {
+				this.listSettings();
+			} else if (cmd.hasOption(QUIT)) {
+				log.info("Quiting setting mode");
+				return false;
+			} else if (cmd.hasOption(CREATE_OPT)) {
+				String pName = cmd.getOptionValue(NAME_OPT).trim();
+				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT).trim();
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
+				String pStoragePath = cmd.getOptionValue(STORAGEPATH).trim();
+				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH).trim();
+				String pSDCard = cmd.getOptionValue(SDCARD).trim();
+				this.createSetting(pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
+			} else if (cmd.hasOption(DELETE_OPT)) {
+				String pID = cmd.getOptionValue(ID).trim();
+				this.deleteSetting(pID);
+			} else if (cmd.hasOption(UPDATE_OPT)) {
+				String pID = cmd.getOptionValue(ID).trim();
+				String pName = cmd.getOptionValue(NAME_OPT).trim();
+				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT).trim();
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
+				String pStoragePath = cmd.getOptionValue(STORAGEPATH).trim();
+				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH).trim();
+				String pSDCard = cmd.getOptionValue(SDCARD).trim();
+				this.updateSetting(pID, pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
+			} else if (cmd.hasOption(WRITE_OPT)) {
+				this.writeSettings();
+			} else {
+				log.info("No commands selected, are you putting - before the command?");
+			}
+		} catch (Exception e) {
+			log.error("Error with command input: {}", pInput, e);
+			showHelp(this.SETTING_OPTIONS);
+		}
+		return true;
 	}
 
 	protected Device getDevice(final int pDeviceNumber) {
@@ -438,8 +572,8 @@ public class Client {
 			log.info("Could not find a device with that ID");
 		}
 	}
-	
-	protected void listDevices(){
+
+	protected void listDevices() {
 		StringBuilder builder = new StringBuilder();
 		Iterator<Map.Entry<String, Device>> entries = this.DEVICES.entrySet().iterator();
 		while (entries.hasNext()) {
@@ -460,6 +594,83 @@ public class Client {
 		}
 	}
 
+	protected void listSettings(){
+		StringBuilder builder = new StringBuilder();
+		Iterator<Map.Entry<String, Setting>> entries = this.SETTINGS.entrySet().iterator();
+		while (entries.hasNext()) {
+			Map.Entry<String, Setting> entry = entries.next();
+			Setting setting = entry.getValue();
+			builder.append(" Name: ");
+			builder.append(setting.getName());
+			builder.append(" Buffer: ");
+			builder.append(setting.getBuffer());
+			builder.append(" Port: ");
+			builder.append(setting.getServerPort());
+			builder.append(" SDCARD: ");
+			builder.append(setting.getSDCard());
+			builder.append(" Storage path: ");
+			builder.append(setting.getStoragePath());
+			builder.append(" Filename path: ");
+			builder.append(setting.getFileNamePath());
+			builder.append(" Devices count: ");
+			builder.append(setting.getDevices().size());
+			log.info(builder.toString());
+			builder.setLength(0);
+		}
+	}
+	
+	protected void createSetting(final String pName, final String pBuffer, final String pPort,
+			final String pStoragePath, final String pFileNamePath, final String pSDCard) {
+		final int buffer = (pBuffer == null) ? this.BUFFER : Integer.parseInt(pBuffer);
+		final int port = (pPort == null) ? this.SERVER_PORT : Integer.parseInt(pPort);
+		final boolean sdcard = (pSDCard == null) ? true : Boolean.parseBoolean(pSDCard);
+		if (pName == null || pStoragePath == null || pFileNamePath == null || pSDCard == null) {
+			log.info("Required attributes not found");
+			if (pName == null)
+				log.info("Name required");
+			if (pStoragePath == null)
+				log.info("Storage path required");
+			if (pFileNamePath == null)
+				log.info("File name of log required");
+			if (pSDCard == null)
+				log.info("SDcard required");
+		} else {
+			Setting setting = new Setting();
+			setting.setName(pName);
+			setting.setBuffer(buffer);
+			setting.setServerPort(port);
+			setting.setFileNamePath(pFileNamePath);
+			setting.setStoragePath(pStoragePath);
+			setting.setSDCard(sdcard);
+			this.SETTINGS.put(pName, setting);
+			/*
+			 * TODO currently we're storing on name, we need to create a unique int ID for settings!
+			 */
+		}
+	}
+
+	protected void deleteSetting(final String pID) {
+		if (pID == null) {
+			log.info("Cannot delete setting if setting profile ID is not passed");
+		} else {
+			/*
+			 * TODO locate setting and delete!
+			 */
+		}
+	}
+
+	protected void updateSetting(final String pID, final String pName, final String pBuffer, final String pPort,
+			final String pStoragePath, final String pFileNamePath, final String pSDCard) {
+		/*
+		 * TODO locate setting then determine new values then update setting
+		 */
+	}
+
+	protected void writeSettings() {
+		/*
+		 * TODO write settings to file!
+		 */
+	}
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
