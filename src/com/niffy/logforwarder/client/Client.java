@@ -206,7 +206,6 @@ public class Client {
 	private static void showHelp(Options options) {
 		HelpFormatter h = new HelpFormatter();
 		h.printHelp(HELP, options);
-		System.exit(-1);
 	}
 
 	public static void main(String[] args) {
