@@ -84,10 +84,20 @@ public class SettingsWriter {
 		writer.writeStartElement(SettingsTags.SETTINGS_SDCARD);
 		writer.writeCharacters(String.valueOf(pSetting.getSDCard()));
 		writer.writeEndElement();
-		//TODO devices
+		int size = pSetting.getDevices().size();
+		if(size > 0){
+			writer.writeStartElement(SettingsTags.SETTINGS_DEVICES);
+			for (int i = 0; i < size; i++) {
+				writer.writeStartElement(SettingsTags.SETTINGS_DEVICES_DEVICE);
+				writer.writeCharacters(String.valueOf(pSetting.getDevices().get(i)));
+				writer.writeEndElement();
+			}
+			writer.writeEndElement();
+		}
 		writer.writeEndElement();
 	}
 	
+
 	// ===========================================================
 	// Methods for/from SuperClass/Interfaces
 	// ===========================================================
