@@ -517,24 +517,24 @@ public class Client {
 				log.info("Quiting setting mode");
 				return false;
 			} else if (cmd.hasOption(CREATE_OPT)) {
-				String pName = cmd.getOptionValue(NAME_OPT).trim();
-				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT).trim();
-				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
-				String pStoragePath = cmd.getOptionValue(STORAGEPATH).trim();
-				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH).trim();
-				String pSDCard = cmd.getOptionValue(SDCARD).trim();
+				String pName = cmd.getOptionValue(NAME_OPT);
+				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT);
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
+				String pStoragePath = cmd.getOptionValue(STORAGEPATH);
+				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH);
+				String pSDCard = cmd.getOptionValue(SDCARD);
 				this.createSetting(pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
 			} else if (cmd.hasOption(DELETE_OPT)) {
-				String pID = cmd.getOptionValue(ID).trim();
+				String pID = cmd.getOptionValue(ID);
 				this.deleteSetting(pID);
 			} else if (cmd.hasOption(UPDATE_OPT)) {
-				String pID = cmd.getOptionValue(ID).trim();
-				String pName = cmd.getOptionValue(NAME_OPT).trim();
-				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT).trim();
-				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
-				String pStoragePath = cmd.getOptionValue(STORAGEPATH).trim();
-				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH).trim();
-				String pSDCard = cmd.getOptionValue(SDCARD).trim();
+				String pID = cmd.getOptionValue(ID);
+				String pName = cmd.getOptionValue(NAME_OPT);
+				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT);
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
+				String pStoragePath = cmd.getOptionValue(STORAGEPATH);
+				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH);
+				String pSDCard = cmd.getOptionValue(SDCARD);
 				this.updateSetting(pID, pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
 			} else if (cmd.hasOption(WRITE_OPT)) {
 				this.writeSettings();
@@ -577,20 +577,20 @@ public class Client {
 				log.info("Quiting device mode");
 				return false;
 			} else if (cmd.hasOption(CREATE_OPT)) {
-				String pName = cmd.getOptionValue(NAME_OPT).trim();
+				String pName = cmd.getOptionValue(NAME_OPT);
 				String pIP = cmd.getOptionValue(IP).trim();
-				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
-				String pFileName = cmd.getOptionValue(FILENAME).trim();
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
+				String pFileName = cmd.getOptionValue(FILENAME);
 				this.createDevice(pName, pIP, pPort, pFileName);
 			} else if (cmd.hasOption(DELETE_OPT)) {
-				String pID = cmd.getOptionValue(DEVICEID).trim();
+				String pID = cmd.getOptionValue(DEVICEID);
 				this.deleteDevice(pID);
 			} else if (cmd.hasOption(UPDATE_OPT)) {
-				String pID = cmd.getOptionValue(DEVICEID).trim();
-				String pName = cmd.getOptionValue(NAME_OPT).trim();
-				String pIP = cmd.getOptionValue(IP).trim();
-				String pPort = cmd.getOptionValue(SERVERPORT_OPT).trim();
-				String pFileName = cmd.getOptionValue(FILENAME).trim();
+				String pID = cmd.getOptionValue(DEVICEID);
+				String pName = cmd.getOptionValue(NAME_OPT);
+				String pIP = cmd.getOptionValue(IP);
+				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
+				String pFileName = cmd.getOptionValue(FILENAME);
 				this.updateDevice(pID, pName, pIP, pPort, pFileName);
 			} else if (cmd.hasOption(WRITE_OPT)) {
 				this.writeDevices();
@@ -784,22 +784,24 @@ public class Client {
 		final int buffer = (pBuffer == null) ? setting.getBuffer() : Integer.parseInt(pBuffer);
 		final int port = (pPort == null) ? setting.getServerPort() : Integer.parseInt(pPort);
 		final boolean sdcard = (pSDCard == null) ? setting.getSDCard() : Boolean.parseBoolean(pSDCard);
-
+		final String name = (pName == null) ? setting.getName() : pName;
+		final String storagepath = (pStoragePath == null) ? setting.getStoragePath() : pStoragePath;
+		final String filename = (pFileNamePath == null) ? setting.getFileNamePath() : pFileNamePath;
 		if (setting != null) {
 			if (setting.getID() == id) {
-				if (setting.getName().compareToIgnoreCase(pName) != 0)
-					setting.setName(pName);
-				if (setting.getStoragePath().compareToIgnoreCase(pStoragePath) != 0)
-					setting.setStoragePath(pStoragePath);
-				if (setting.getFileNamePath().compareToIgnoreCase(pFileNamePath) != 0)
-					setting.setFileNamePath(pFileNamePath);
+				if (setting.getName().compareToIgnoreCase(name) != 0)
+					setting.setName(name);
+				if (setting.getStoragePath().compareToIgnoreCase(storagepath) != 0)
+					setting.setStoragePath(storagepath);
+				if (setting.getFileNamePath().compareToIgnoreCase(filename) != 0)
+					setting.setFileNamePath(filename);
 				if (setting.getBuffer() != buffer)
 					setting.setBuffer(buffer);
 				if (setting.getServerPort() != port)
 					setting.setServerPort(port);
 				if (setting.getSDCard() != sdcard)
 					setting.setSDCard(sdcard);
-				log.info("Updated setting profile: {}. REMEMBER TO CALL -w IN SETTTING MODE", id);
+				log.info("Updated setting profile: {} . REMEMBER TO CALL -w IN SETTTING MODE", id);
 			} else {
 				log.info("Mismatched setting profile and arraylist index. Found setting profile: {}", setting.getID());
 			}
@@ -848,17 +850,20 @@ public class Client {
 		final int id = Integer.parseInt(pID);
 		Device device = this.DEVICES.get(id);
 		final int port = (pPort == null) ? device.getPort() : Integer.parseInt(pPort);
+		final String name = (pName == null) ? device.getName() : pName;
+		final String ip = (pIP == null) ? device.getAddress() : pIP;
+		final String filename = (pFileName == null) ? device.getFileName() : pFileName;
 		if (device != null) {
 			if (device.getID() == id) {
-				if (device.getName().compareToIgnoreCase(pName) != 0)
-					device.setName(pName);
-				if (device.getAddress().compareToIgnoreCase(pIP) != 0)
-					device.setAddress(pIP);
+				if (device.getName().compareToIgnoreCase(name) != 0)
+					device.setName(name);
+				if (device.getAddress().compareToIgnoreCase(ip) != 0)
+					device.setAddress(ip);
 				if (device.getPort() != port)
 					device.setPort(port);
-				if (device.getFileName().compareToIgnoreCase(pFileName) != 0)
-					device.setFileName(pFileName);
-				log.info("Updated device profile: {}. REMEMBER TO CALL -w IN DEVICE MODE");
+				if (device.getFileName().compareToIgnoreCase(filename) != 0)
+					device.setFileName(filename);
+				log.info("Updated device profile: {} . REMEMBER TO CALL -w IN DEVICE MODE", id);
 			} else {
 				log.info("Mismatched device profile and arraylist index. Found device profile: {}", device.getID());
 			}
