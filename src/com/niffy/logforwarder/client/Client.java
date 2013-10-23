@@ -106,7 +106,7 @@ public class Client {
 	public final static String FILENAME = "filename";
 	public final static String ADD = "add";
 	public final static String ADD_OPT = "a";
-	
+
 	@SuppressWarnings("static-access")
 	private static Options createOptions() {
 		Options options = new Options();
@@ -544,6 +544,7 @@ public class Client {
 			} else if (cmd.hasOption(ADD_OPT)) {
 				String pID = cmd.getOptionValue(ID);
 				String[] pDevices = cmd.getOptionValues(DEVICEID_OPT);
+				this.addDevicesToSetting(pID, pDevices);
 			} else {
 				log.info("No commands selected, are you putting - before the command?");
 			}
@@ -878,6 +879,38 @@ public class Client {
 		}
 	}
 
+	protected void addDevicesToSetting(final String pID, final String[] pDevices){
+		if (pID == null) {
+			log.info("Require Setting ID!");
+			return;
+		}
+		if (pDevices == null) {
+			log.info("Require device IDs!");
+			return;
+		}
+		final int id = Integer.parseInt(pID);
+		Setting setting = this.SETTINGS.get(id);
+		if (setting != null) {
+			if (setting.getID() == id) {
+				for (String did : pDevices) {
+					int pDeviceID = Integer.parseInt(did);
+					Device device = this.DEVICES.get(pDeviceID);
+					if (device != null) {
+						setting.addDevices(pDeviceID);
+						log.info("Added device profile {} to setting profile", pDeviceID);
+					}else{
+						log.info("Could not locate device profile: {}", pDeviceID);
+					}
+				}
+			} else {
+				log.info("Mismatched setting profile and arraylist index. Found setting profile: {}", setting.getID());
+			}
+			log.info("Finished! Remember to call -w in setting mode to write changes!");
+		}else{
+			log.info("Could not locate setting profile: {}", id);
+		}
+	}
+
 	protected void writeSettings() {
 		log.info("Writing settings to file");
 		SettingsWriter writer = new SettingsWriter(this.SETTING_FILE);
@@ -887,6 +920,7 @@ public class Client {
 	protected void writeDevices() {
 
 	}
+
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
