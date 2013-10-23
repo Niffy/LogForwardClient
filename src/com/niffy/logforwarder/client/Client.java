@@ -10,9 +10,6 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -92,6 +89,7 @@ public class Client {
 	public final static String UPDATE_OPT = "u";
 	public final static String ID = "id";
 	public final static String DEVICEID = "deviceid";
+	public final static String DEVICEID_OPT = "did";
 	public final static String NAME = "name";
 	public final static String NAME_OPT = "n";
 	public final static String BUFFERSIZE = "buffer";
@@ -103,11 +101,12 @@ public class Client {
 	public final static String SDCARD = "sdcard";
 	public final static String WRITE = "write";
 	public final static String WRITE_OPT = "w";
-
 	public final static String DEVICEMODE = "devicemode";
 	public final static String IP = "ip";
 	public final static String FILENAME = "filename";
-
+	public final static String ADD = "add";
+	public final static String ADD_OPT = "a";
+	
 	@SuppressWarnings("static-access")
 	private static Options createOptions() {
 		Options options = new Options();
@@ -180,7 +179,8 @@ public class Client {
 		Option id = OptionBuilder.hasArg(true).withArgName("setting id(int)").isRequired(false)
 				.withDescription("Setting profile ID").create(ID);
 		Option deviceid = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
-				.withDescription("device ID").create(DEVICEID);
+				.withLongOpt(DEVICEID).withDescription("device ID. Max 10").create(DEVICEID_OPT);
+		deviceid.setArgs(10);
 		Option name = OptionBuilder.hasArg(true).withArgName("String").isRequired(false).withLongOpt(NAME)
 				.withDescription("Set profile name").create(NAME_OPT);
 		Option buffer = OptionBuilder.hasArg(true).withArgName("int").isRequired(false).withLongOpt(BUFFERSIZE)
@@ -197,6 +197,8 @@ public class Client {
 				.create(QUIT_OPT);
 		Option write = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(WRITE)
 				.withDescription("Write settings to file?").create(WRITE_OPT);
+		Option add = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(ADD)
+				.withDescription("To be used when updating a setting profile with devices to add").create(ADD_OPT);
 		options.addOption(list);
 		options.addOption(create);
 		options.addOption(delete);
@@ -212,6 +214,7 @@ public class Client {
 		options.addOption(write);
 		options.addOption(quit);
 		options.addOption(help);
+		options.addOption(add);
 		return options;
 	}
 
@@ -538,6 +541,9 @@ public class Client {
 				this.updateSetting(pID, pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
 			} else if (cmd.hasOption(WRITE_OPT)) {
 				this.writeSettings();
+			} else if (cmd.hasOption(ADD_OPT)) {
+				String pID = cmd.getOptionValue(ID);
+				String[] pDevices = cmd.getOptionValues(DEVICEID_OPT);
 			} else {
 				log.info("No commands selected, are you putting - before the command?");
 			}
