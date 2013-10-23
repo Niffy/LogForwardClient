@@ -841,9 +841,30 @@ public class Client {
 
 	protected void updateDevice(final String pID, final String pName, final String pIP, final String pPort,
 			final String pFileName) {
-		/*
-		 * TODO locate device then determine new values then update setting
-		 */
+		if (pID == null) {
+			log.info("Require device ID!");
+			return;
+		}
+		final int id = Integer.parseInt(pID);
+		Device device = this.DEVICES.get(id);
+		final int port = (pPort == null) ? device.getPort() : Integer.parseInt(pPort);
+		if (device != null) {
+			if (device.getID() == id) {
+				if (device.getName().compareToIgnoreCase(pName) != 0)
+					device.setName(pName);
+				if (device.getAddress().compareToIgnoreCase(pIP) != 0)
+					device.setAddress(pIP);
+				if (device.getPort() != port)
+					device.setPort(port);
+				if (device.getFileName().compareToIgnoreCase(pFileName) != 0)
+					device.setFileName(pFileName);
+				log.info("Updated device profile: {}. REMEMBER TO CALL -w IN DEVICE MODE");
+			} else {
+				log.info("Mismatched device profile and arraylist index. Found device profile: {}", device.getID());
+			}
+		} else {
+			log.info("Could not locate device profile: {}", id);
+		}
 	}
 
 	protected void writeSettings() {
