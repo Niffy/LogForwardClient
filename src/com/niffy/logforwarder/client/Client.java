@@ -775,9 +775,37 @@ public class Client {
 
 	protected void updateSetting(final String pID, final String pName, final String pBuffer, final String pPort,
 			final String pStoragePath, final String pFileNamePath, final String pSDCard) {
-		/*
-		 * TODO locate setting then determine new values then update setting
-		 */
+		if (pID == null) {
+			log.info("Require setting profile ID!");
+			return;
+		}
+		final int id = Integer.parseInt(pID);
+		Setting setting = this.SETTINGS.get(id);
+		final int buffer = (pBuffer == null) ? setting.getBuffer() : Integer.parseInt(pBuffer);
+		final int port = (pPort == null) ? setting.getServerPort() : Integer.parseInt(pPort);
+		final boolean sdcard = (pSDCard == null) ? setting.getSDCard() : Boolean.parseBoolean(pSDCard);
+
+		if (setting != null) {
+			if (setting.getID() == id) {
+				if (setting.getName().compareToIgnoreCase(pName) != 0)
+					setting.setName(pName);
+				if (setting.getStoragePath().compareToIgnoreCase(pStoragePath) != 0)
+					setting.setStoragePath(pStoragePath);
+				if (setting.getFileNamePath().compareToIgnoreCase(pFileNamePath) != 0)
+					setting.setFileNamePath(pFileNamePath);
+				if (setting.getBuffer() != buffer)
+					setting.setBuffer(buffer);
+				if (setting.getServerPort() != port)
+					setting.setServerPort(port);
+				if (setting.getSDCard() != sdcard)
+					setting.setSDCard(sdcard);
+				log.info("Updated setting profile: {}. REMEMBER TO CALL -w IN SETTTING MODE", id);
+			} else {
+				log.info("Mismatched setting profile and arraylist index. Found setting profile: {}", setting.getID());
+			}
+		} else {
+			log.info("Could not locate setting profile: {}", id);
+		}
 	}
 
 	protected void createDevice(final String pName, final String pIP, final String pPort, final String pFileName) {
