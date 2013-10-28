@@ -43,7 +43,7 @@ Two XML files are required for the program to run
 </devices>
 ```
 
-* _id_ tag must be a number and unique 
+* _id_ tag must be a number and unique - You can add by hand but make sure its not in use!
 * _name_ is a name of the device
 * _ip_ ip address of device
 * _port_ what port is the android log forward service running on
@@ -55,6 +55,7 @@ Two XML files are required for the program to run
 <?xml version="1.0" encoding="utf-8"?>
 <settings>
 	<setting>
+		<id>0</id>
 		<name>Isometric world</name>
 		<buffer>20971520</buffer>
 		<serverport>1088</serverport>
@@ -62,71 +63,102 @@ Two XML files are required for the program to run
 		<filenamepath>IsometricWorld.log</filenamepath>
 		<sdcard>true</sdcard>
 		<devices>
-			<device>Nexus 7</device>
-			<device>Nexus 4</device>
-			<device>Desire S</device>
+			<device>0</device>
+			<device>1</device>
+			<device>2</device>
 		</devices>
 	</setting>
 </settings>
 ```
 
-* _name_ Seems redundant
+* _id_ tag must be a number and unique - You can add by hand but make sure its not in use!
+* _name_ Name of profile
 * _buffer_ size of buffers
 * _serverport_ default port the server operates on
 * _storagepath_ where should the logs be saved
 * _filenamepath_ name of log file to collect from devices
 * _sdcard_ is the log file store in an external location on device
-* _devices_ Seems redundant
+* _devices_ what devices use this profile
 
 ## Running!
 
-First you need to compile the client program to a jar (Easy to do with eclipse). I called mine LFCRun.jar 
+First you need to compile the client program to a jar (Easy to do with eclipse). I called mine LogForwardClient-dependencies.jar 
 
 ```
-java -jar LFCRun.jar X:\pathto\devices.xml x:\pathto\settings.xml
+java -jar LogForwardClient-dependencies.jar -dl X:\pathto\devices.xml -s x:\pathto\settings.xml
 ```
+
+**Remember calling -h will bring up the help screen, this can be done for loading the program, executing normal commands or commands in the modes**
 
 Then you have the following options.
 
-> collect-all
+> -ca or -collectall
 
 Collect from all the devices
 
-> collect-single
+> -cs DEVICEID or -collectsingle DEVICEID
 
-Will print out devices id, enter in id of device you wish to collect from
+Replace DEVICEID with the id of device you wish to collect from
 
-> del-all
+> -dl or -delall
 
 Delete log from all devices
 
-> del-single
+> -ds DEVICEID or -delsingle DEVICEID
 
-Will print out devices id, enter in id of device you wish to delete from
+Replace DEVICEID with the id of device you wish to delete from
 
-> shutdown-all
+> -sda or -shutdownall
 
 Attempt to shutdown the service on all devices
 
->shutdown-single
+> sds DEVICEID or -shutdownsingle DEVICEID
 
-Will print out devices id, enter in id of device you wish to shutdown its server.
+Replace DEVICEID with the id of device you wish to shut down service on
 
-> quit
+> -q or -quit
 
-You can call quit at any time to exit the program.
+You can call quit at any time to exit the program or the current mode
 
-> up
+##Modes
 
-You can call up to come out of sub menus (ie XXX-single commands)
+Calling the following commands will go into their respective modes.
 
-## Display
-The display is quite messy as it prints out information from the NIO selector thread, so its not very clear if a request was sucessful or not. 
+> -devicemode or -settingmode
+
+###Device
+If you wish to add or update a device you can do it here. 
+
+To view current devices run
+> -ls 
+
+Here is an example adding a device.
+> -c -n NAME -filename NAMEOFLOG -p PORT -ip IPADDRESS
+
+* -c Creates a device
+* -n Name of the device
+* -filename filename to save log as.
+* -p the port the service runs on
+* -ip address of the client.
+
+You can also run a similar command to update a device, you can pick what ever attribute you want to update in the command.
+> -u -deviceid ID -n NAME -filename NAMEOFLOG -p PORT -ip IPADDRESS
+
+* -u Update a device
+* -deviceid ID of the device
+* -n Name of the device
+* -filename filename to save log as.
+* -p the port the service runs on
+* -ip address of the client.
+
+**Remember to call -w in the mode to write changes!**
+
+###Settings
+If you wish to update
 
 ## Future
-When I'm fed up with this hodgepodge program I will do the following
+I've implemented a lot more than I first thought I would.  It works for now but will struggle to cope when I change what I'm working on.
+Some issues and ideas are in the issue area.
 
-* Build with ant
-* Use Apache CLI for inputs
-* Clean up display output - make it more english!
-* Have its own log file, perhaps output more technical info to a log file than what is displayed.
+The Client.java is starting to bloat and the if statements dealing with commands could become fragile in future.
+

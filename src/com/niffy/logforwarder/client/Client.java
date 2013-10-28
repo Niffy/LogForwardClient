@@ -55,10 +55,8 @@ public class Client {
 	public String SETTING_FILE;
 	public String DEVICE_FILE;
 
-	public final static String DEVICES_LIST = "devicelist";
-	public final static String DEVICES_LIST_OPT = "dl";
-	public final static String SETTINGS_INPUT = "settings";
-	public final static String SETTINGS_INPUT_OPT = "s";
+	public final static String DEVICES_LIST = "devicefile";
+	public final static String SETTINGS_INPUT = "settingsfile";
 	public final static String LIST = "list";
 	public final static String LIST_OPT = "ls";
 	public final static String COLLECT_ALL = "collectall";
@@ -114,9 +112,9 @@ public class Client {
 
 		Option app_version = new Option(VERSION_OPT, VERSION, false, "Get build version, which is a date and time");
 		Option devicelist = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false)
-				.withLongOpt(DEVICES_LIST).withDescription("XML file with devices").create(DEVICES_LIST_OPT);
+				.withDescription("XML file with devices").create(DEVICES_LIST);
 		Option settings = OptionBuilder.hasArg(true).withArgName("xml file path").isRequired(false)
-				.withLongOpt(SETTINGS_INPUT).withDescription("XML file with settings").create(SETTINGS_INPUT_OPT);
+				.withDescription("XML file with settings").create(SETTINGS_INPUT);
 		options.addOption(devicelist);
 		options.addOption(settings);
 		options.addOption(help);
@@ -172,12 +170,12 @@ public class Client {
 				.withDescription("List all devices").create(LIST_OPT);
 		Option create = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(CREATE)
 				.withDescription("Create a new setting profile").create(CREATE_OPT);
-		Option delete = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(DELETE)
-				.withDescription("Delete a setting profile").create(DELETE_OPT);
-		Option update = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(UPDATE)
-				.withDescription("Update a setting profile").create(UPDATE_OPT);
-		Option id = OptionBuilder.hasArg(true).withArgName("setting id(int)").isRequired(false)
-				.withDescription("Setting profile ID").create(ID);
+		Option delete = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(DELETE)
+				.withDescription("Delete a setting profile").withArgName("setting profile id(int)")
+				.create(DELETE_OPT);
+		Option update = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(UPDATE)
+				.withDescription("Update a setting profile").withArgName("setting profile id(int)")
+				.create(UPDATE_OPT);
 		Option deviceid = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
 				.withLongOpt(DEVICEID).withDescription("device ID. Max 10").create(DEVICEID_OPT);
 		deviceid.setArgs(10);
@@ -197,13 +195,13 @@ public class Client {
 				.create(QUIT_OPT);
 		Option write = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(WRITE)
 				.withDescription("Write settings to file?").create(WRITE_OPT);
-		Option add = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(ADD)
+		Option add = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(ADD)
+				.withArgName("setting profile id(int)")
 				.withDescription("To be used when updating a setting profile with devices to add").create(ADD_OPT);
 		options.addOption(list);
 		options.addOption(create);
 		options.addOption(delete);
 		options.addOption(update);
-		options.addOption(id);
 		options.addOption(deviceid);
 		options.addOption(name);
 		options.addOption(buffer);
@@ -226,12 +224,12 @@ public class Client {
 				.withDescription("List all devices").create(LIST_OPT);
 		Option create = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(CREATE)
 				.withDescription("Create a new setting profile").create(CREATE_OPT);
-		Option delete = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(DELETE)
-				.withDescription("Delete a setting profile").create(DELETE_OPT);
-		Option update = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(UPDATE)
-				.withDescription("Update a setting profile").create(UPDATE_OPT);
-		Option deviceid = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
-				.withDescription("device ID").create(DEVICEID);
+		Option delete = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(DELETE)
+				.withDescription("Delete a setting profile").withArgName("Device profile id(int)")
+				.create(DELETE_OPT);
+		Option update = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(UPDATE)
+				.withDescription("Update a setting profile").withArgName("Device profile id(int)")
+				.create(UPDATE_OPT);
 		Option name = OptionBuilder.hasArg(true).withArgName("String").isRequired(false).withLongOpt(NAME)
 				.withDescription("Set profile name").create(NAME_OPT);
 		Option ip = OptionBuilder.hasArg(true).withArgName("ip<String>").isRequired(false).withDescription("device IP")
@@ -248,7 +246,6 @@ public class Client {
 		options.addOption(create);
 		options.addOption(delete);
 		options.addOption(update);
-		options.addOption(deviceid);
 		options.addOption(name);
 		options.addOption(ip);
 		options.addOption(port);
@@ -271,13 +268,13 @@ public class Client {
 			CommandLine cmd = parser.parse(options, args);
 			if (cmd.hasOption(HELP_OPT)) {
 				showHelp(options);
-			} else if (cmd.hasOption(DEVICES_LIST_OPT)) {
-				String pDevices = cmd.getOptionValue(DEVICES_LIST_OPT);
-				String pSettings = cmd.getOptionValue(SETTINGS_INPUT_OPT);
+			} else if (cmd.hasOption(DEVICES_LIST)) {
+				String pDevices = cmd.getOptionValue(DEVICES_LIST);
+				String pSettings = cmd.getOptionValue(SETTINGS_INPUT);
 				execute(pDevices, pSettings);
-			} else if (cmd.hasOption(SETTINGS_INPUT_OPT)) {
-				String pDevices = cmd.getOptionValue(DEVICES_LIST_OPT);
-				String pSettings = cmd.getOptionValue(SETTINGS_INPUT_OPT);
+			} else if (cmd.hasOption(SETTINGS_INPUT)) {
+				String pDevices = cmd.getOptionValue(DEVICES_LIST);
+				String pSettings = cmd.getOptionValue(SETTINGS_INPUT);
 				execute(pDevices, pSettings);
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
@@ -528,10 +525,10 @@ public class Client {
 				String pSDCard = cmd.getOptionValue(SDCARD);
 				this.createSetting(pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
 			} else if (cmd.hasOption(DELETE_OPT)) {
-				String pID = cmd.getOptionValue(ID);
+				String pID = cmd.getOptionValue(DELETE_OPT);
 				this.deleteSetting(pID);
 			} else if (cmd.hasOption(UPDATE_OPT)) {
-				String pID = cmd.getOptionValue(ID);
+				String pID = cmd.getOptionValue(UPDATE_OPT);
 				String pName = cmd.getOptionValue(NAME_OPT);
 				String pBuffer = cmd.getOptionValue(BUFFERSIZE_OPT);
 				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
@@ -542,7 +539,7 @@ public class Client {
 			} else if (cmd.hasOption(WRITE_OPT)) {
 				this.writeSettings();
 			} else if (cmd.hasOption(ADD_OPT)) {
-				String pID = cmd.getOptionValue(ID);
+				String pID = cmd.getOptionValue(ADD_OPT);
 				String[] pDevices = cmd.getOptionValues(DEVICEID_OPT);
 				this.addDevicesToSetting(pID, pDevices);
 			} else {
@@ -590,10 +587,10 @@ public class Client {
 				String pFileName = cmd.getOptionValue(FILENAME);
 				this.createDevice(pName, pIP, pPort, pFileName);
 			} else if (cmd.hasOption(DELETE_OPT)) {
-				String pID = cmd.getOptionValue(DEVICEID);
+				String pID = cmd.getOptionValue(DELETE_OPT);
 				this.deleteDevice(pID);
 			} else if (cmd.hasOption(UPDATE_OPT)) {
-				String pID = cmd.getOptionValue(DEVICEID);
+				String pID = cmd.getOptionValue(UPDATE_OPT);
 				String pName = cmd.getOptionValue(NAME_OPT);
 				String pIP = cmd.getOptionValue(IP);
 				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
