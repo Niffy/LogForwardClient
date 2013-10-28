@@ -55,7 +55,21 @@ public class SettingManager {
 	public void setDeviceManager(final DeviceManager pDeviceManager) {
 		this.mDeviceManager = pDeviceManager;
 	}
-
+	
+	public Setting getSetting(final int pSettingID){
+		Setting setting = this.mSettings.get(pSettingID);
+		if(setting == null){
+			log.info("Could not locate setting at id location");
+			return null;
+		}
+		if(setting.getID() == pSettingID){
+			return setting;
+		}else{
+			log.info("Found a different setting profile ID at location");
+			return null;			
+		}
+		
+	}
 	// ===========================================================
 	// Methods
 	// ===========================================================

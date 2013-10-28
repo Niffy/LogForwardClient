@@ -74,6 +74,7 @@ public class Client {
 	public final static String FILENAME = "filename";
 	public final static String ADD = "add";
 	public final static String ADD_OPT = "a";
+	public final static String CHECKOUT = "checkout";
 
 	@SuppressWarnings("static-access")
 	private static Options createOptions() {
@@ -117,6 +118,9 @@ public class Client {
 		Option deviceMode = OptionBuilder.isRequired(false).withDescription("Enter device mode").create(DEVICEMODE);
 		Option quit = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(QUIT).withDescription("Quit")
 				.create(QUIT_OPT);
+		Option checkout = OptionBuilder.hasArg(true).isRequired(false)
+				.withDescription("Checkout a setting profile, ie sellect").withArgName("setting profile id(int)")
+				.create(CHECKOUT);
 		options.addOption(help);
 		options.addOption(list);
 		options.addOption(collectall);
@@ -128,7 +132,7 @@ public class Client {
 		options.addOption(createSetting);
 		options.addOption(deviceMode);
 		options.addOption(quit);
-
+		options.addOption(checkout);
 		return options;
 	}
 
@@ -335,6 +339,8 @@ public class Client {
 				this.settingMode();
 			} else if (cmd.hasOption(DEVICEMODE)) {
 				this.deviceMode();
+			} else if (cmd.hasOption(CHECKOUT)){
+				this.mClientManager.setSettingProfile(cmd.getOptionValue(CHECKOUT));
 			} else if (cmd.hasOption(LIST_OPT)) {
 				this.mDeviceManager.listDevices();
 			} else if (cmd.hasOption(VERSION_OPT)) {

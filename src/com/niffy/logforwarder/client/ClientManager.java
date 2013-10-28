@@ -143,7 +143,17 @@ public class ClientManager {
 			log.info("Could not find a device with that ID");
 		}
 	}
-
+	
+	public void setSettingProfile(final String pSettingProfileID){
+		try {
+			final int pSetting = Integer.parseInt(pSettingProfileID);
+			Setting setting = this.mSettingManager.getSetting(pSetting);
+			log.info("Using setting: {}", setting.getName());
+		} catch (NumberFormatException e) {
+			log.error("Could not get a number, going up..^");
+			return;
+		}
+	}
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
