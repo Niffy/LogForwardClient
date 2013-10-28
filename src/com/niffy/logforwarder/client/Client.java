@@ -1,20 +1,8 @@
 package com.niffy.logforwarder.client;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -25,35 +13,17 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-
-import com.niffy.logforwarder.client.parser.DeviceParser;
-import com.niffy.logforwarder.client.parser.SettingsParser;
-import com.niffy.logforwarder.lib.logmanagement.ILogManager;
-import com.niffy.logforwarder.lib.logmanagement.LogManagerClient;
 
 public class Client {
 	private final static Logger log = LoggerFactory.getLogger(Client.class);
 
-	public CustomClientSelector CLIENT_SELECTOR;
-	public InetSocketAddress ADDRESS;
-	public int PORT = 1006;
-	public int BUFFER = 20971520;
-	public int SERVER_PORT = 1088;
-	public ILogManager LOG_MANAGER;
-	public int VERSIONCODE = 0;
-	public ArrayList<Device> DEVICES = new ArrayList<Device>();
-	public ArrayList<Setting> SETTINGS = new ArrayList<Setting>();
-	public Requester REQUESTER;
-	public Options COMMAND_OPTIONS;
-	public Options SETTING_OPTIONS;
-	public Options DEVICE_OPTIONS;
-	public AtomicInteger SETTING_ID_TO_USE;
-	public AtomicInteger DEVICE_ID_TO_USE;
-	public String SETTING_FILE;
-	public String DEVICE_FILE;
+	private Options COMMAND_OPTIONS;
+	private Options SETTING_OPTIONS;
+	private Options DEVICE_OPTIONS;
+
+	private DeviceManager mDeviceManager;
+	private SettingManager mSettingManager;
+	private ClientManager mClientManager;
 
 	public final static String DEVICES_LIST = "devicefile";
 	public final static String SETTINGS_INPUT = "settingsfile";
@@ -171,11 +141,9 @@ public class Client {
 		Option create = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(CREATE)
 				.withDescription("Create a new setting profile").create(CREATE_OPT);
 		Option delete = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(DELETE)
-				.withDescription("Delete a setting profile").withArgName("setting profile id(int)")
-				.create(DELETE_OPT);
+				.withDescription("Delete a setting profile").withArgName("setting profile id(int)").create(DELETE_OPT);
 		Option update = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(UPDATE)
-				.withDescription("Update a setting profile").withArgName("setting profile id(int)")
-				.create(UPDATE_OPT);
+				.withDescription("Update a setting profile").withArgName("setting profile id(int)").create(UPDATE_OPT);
 		Option deviceid = OptionBuilder.hasArg(true).withArgName("device id(int)").isRequired(false)
 				.withLongOpt(DEVICEID).withDescription("device ID. Max 10").create(DEVICEID_OPT);
 		deviceid.setArgs(10);
@@ -225,11 +193,9 @@ public class Client {
 		Option create = OptionBuilder.hasArg(false).isRequired(false).withLongOpt(CREATE)
 				.withDescription("Create a new setting profile").create(CREATE_OPT);
 		Option delete = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(DELETE)
-				.withDescription("Delete a setting profile").withArgName("Device profile id(int)")
-				.create(DELETE_OPT);
+				.withDescription("Delete a setting profile").withArgName("Device profile id(int)").create(DELETE_OPT);
 		Option update = OptionBuilder.hasArg(true).isRequired(false).withLongOpt(UPDATE)
-				.withDescription("Update a setting profile").withArgName("Device profile id(int)")
-				.create(UPDATE_OPT);
+				.withDescription("Update a setting profile").withArgName("Device profile id(int)").create(UPDATE_OPT);
 		Option name = OptionBuilder.hasArg(true).withArgName("String").isRequired(false).withLongOpt(NAME)
 				.withDescription("Set profile name").create(NAME_OPT);
 		Option ip = OptionBuilder.hasArg(true).withArgName("ip<String>").isRequired(false).withDescription("device IP")
@@ -302,178 +268,75 @@ public class Client {
 	public Client(final String pDeviceFile, final String pSettingFile) {
 		String version = this.getClass().getPackage().getImplementationVersion();
 		log.info("Started LogForwardClient Version: {}", version);
-		this.SETTING_FILE = pSettingFile;
-		this.DEVICE_FILE = pDeviceFile;
+		this.mSettingManager = new SettingManager();
+		this.mDeviceManager = new DeviceManager();
+		this.mSettingManager.setDeviceManager(this.mDeviceManager);
+		this.mDeviceManager.setSettingManager(this.mSettingManager);
+
 		this.COMMAND_OPTIONS = createCommandOptions();
 		this.SETTING_OPTIONS = createSettingOptions();
 		this.DEVICE_OPTIONS = createDeviceOptions();
-		this.readInSettings(pDeviceFile, pSettingFile);
-		this.LOG_MANAGER = new LogManagerClient(this.VERSIONCODE);
-		this.ADDRESS = new InetSocketAddress(this.PORT);
-		try {
-			this.CLIENT_SELECTOR = new CustomClientSelector("Client Selector", this.ADDRESS, this.BUFFER,
-					this.SERVER_PORT, this.LOG_MANAGER);
-			new Thread(this.CLIENT_SELECTOR).start();
-		} catch (IOException e) {
-			log.error("Error creating selector", e);
-		}
-		this.REQUESTER = new Requester(CLIENT_SELECTOR, DEVICES, SETTINGS.get(0), VERSIONCODE);
-		this.LOG_MANAGER.setSelector(CLIENT_SELECTOR);
-		this.process();
+		this.mDeviceManager.readInDeviceFile(pDeviceFile);
+		this.mSettingManager.readInSettingFile(pSettingFile);
+		this.mDeviceManager.loopDevices();
+		this.mSettingManager.loopSettings();
+		this.mClientManager = new ClientManager(this.mSettingManager, this.mDeviceManager);
+		this.mainCommandLoop();
 	}
 
-	protected void readInSettings(final String pDeviceFile, final String pSettingFile) {
-		this.readDevices(pDeviceFile);
-		this.readSettings(pSettingFile);
-		this.loopDevices();
-		this.loopSettings();
-	}
-
-	protected void readDevices(final String pPath) {
-		log.debug("Reading in devices");
-		InputSource is = null;
-		try {
-			InputStream inputStream = new FileInputStream(pPath);
-			Reader reader = new InputStreamReader(inputStream, "UTF-8");
-			is = new InputSource(reader);
-			is.setEncoding("UTF-8");
-		} catch (FileNotFoundException e) {
-			log.error("File not found: {}", pPath, e);
-			return;
-		} catch (UnsupportedEncodingException e) {
-			log.error("UnsupportedEncodingException: {}", pPath, e);
-			return;
-		}
-
-		try {
-			final SAXParserFactory spf = SAXParserFactory.newInstance();
-			final SAXParser sp = spf.newSAXParser();
-			final XMLReader xr = sp.getXMLReader();
-			final DeviceParser parser = new DeviceParser();
-			xr.setContentHandler(parser);
-			xr.parse(is);
-			this.DEVICES = parser.getDevices();
-			this.DEVICE_ID_TO_USE = new AtomicInteger(parser.getHighestID());
-		} catch (final SAXException e) {
-			log.error("SAXException loading devices", e);
-		} catch (final ParserConfigurationException e) {
-			log.error("ParserConfigurationException loading devices", e);
-		} catch (final IOException e) {
-			log.error("IOException loading devices", e);
-		}
-	}
-
-	protected void readSettings(final String pPath) {
-		log.debug("Reading in settings");
-		InputSource is = null;
-		try {
-			InputStream inputStream = new FileInputStream(pPath);
-			Reader reader = new InputStreamReader(inputStream, "UTF-8");
-			is = new InputSource(reader);
-			is.setEncoding("UTF-8");
-		} catch (FileNotFoundException e) {
-			log.error("File not found: {}", pPath, e);
-			return;
-		} catch (UnsupportedEncodingException e) {
-			log.error("UnsupportedEncodingException: {}", pPath, e);
-			return;
-		}
-		try {
-			final SAXParserFactory spf = SAXParserFactory.newInstance();
-			final SAXParser sp = spf.newSAXParser();
-			final XMLReader xr = sp.getXMLReader();
-			final SettingsParser parser = new SettingsParser();
-			xr.setContentHandler(parser);
-			xr.parse(is);
-			this.SETTINGS = parser.getSettings();
-			this.SETTING_ID_TO_USE = new AtomicInteger(parser.getHighestID());
-		} catch (final SAXException e) {
-			log.error("SAXException loading devices", e);
-		} catch (final ParserConfigurationException e) {
-			log.error("ParserConfigurationException loading devices", e);
-		} catch (final IOException e) {
-			log.error("IOException loading devices", e);
-		}
-	}
-
-	protected void loopDevices() {
-		log.debug("Looping Devices: {}", this.DEVICES.size());
-		for (Device device : this.DEVICES) {
-			Object[] array = { device.getID(), device.getName(), device.getAddress(), device.getPort(),
-					device.getFileName() };
-			log.debug("Device ID: {} Name: {} Address: {}  Port: {} Filename: {}", array);
-		}
-	}
-
-	protected void loopSettings() {
-		log.debug("Looping Settings: {}", this.SETTINGS.size());
-		for (Setting setting : this.SETTINGS) {
-			Object[] array = { setting.getID(), setting.getName(), setting.getBuffer(), setting.getServerPort(),
-					setting.getStoragePath(), setting.getFileNamePath(), setting.getSDCard() };
-			log.debug("Setting. ID: {} Name: {} Buffer: {} Port: {} storagePath: {} FileNamePath: {} SDCard: {} ",
-					array);
-			ArrayList<Integer> Devices = setting.getDevices();
-			for (Integer id : Devices) {
-				log.debug("Device: {}", id);
-			}
-		}
-	}
-
-	public void process() {
+	private void mainCommandLoop() {
 		InputStreamReader converter = new InputStreamReader(System.in);
 		BufferedReader in = new BufferedReader(converter);
 		try {
 			while (true) {
 				System.out.print("main Input: ");
 				String[] pInput = in.readLine().split(" ");
-				this.readfromline(pInput);
+				this.readFromMainCommandLoop(pInput);
 			}
 		} catch (IOException e) {
 			log.error("Error reading in input");
 		}
 	}
 
-	protected void readfromline(String[] pInput) {
+	private void readFromMainCommandLoop(String[] pInput) {
 		try {
 			CommandLineParser parser = new PosixParser();
 			CommandLine cmd = parser.parse(this.COMMAND_OPTIONS, pInput);
 			if (cmd.hasOption(HELP_OPT)) {
 				showHelp(this.COMMAND_OPTIONS);
 			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
-				this.REQUESTER.getAll();
+				this.mClientManager.collectAll();
 			} else if (cmd.hasOption(COLLECT_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(COLLECT_SINGLE_OPT);
 				if (pDeviceString != null) {
-					this.collectSingle(pDeviceString);
+					this.mClientManager.collectSingle(pDeviceString);
 				} else {
 					log.info("No device ID supplied with command: {}", COLLECT_SINGLE);
 				}
-			} else if (cmd.hasOption(COLLECT_ALL_OPT)) {
-				this.REQUESTER.getAll();
 			} else if (cmd.hasOption(DEL_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
-					this.deleteSingle(pDeviceString);
+					this.mClientManager.deleteSingle(pDeviceString);
 				} else {
 					log.info("No device ID supplied with command: {}", DEL_SINGLE);
 				}
 			} else if (cmd.hasOption(DEL_ALL_OPT)) {
-				this.REQUESTER.deleteAll();
+				this.mClientManager.deleteAll();
 			} else if (cmd.hasOption(DEL_SINGLE_OPT)) {
 				final String pDeviceString = cmd.getOptionValue(DEL_SINGLE_OPT);
 				if (pDeviceString != null) {
-					this.deleteSingle(pDeviceString);
+					this.mClientManager.deleteSingle(pDeviceString);
 				} else {
 					log.info("No device ID supplied with command: {}", DEL_SINGLE);
 				}
-			} else if (cmd.hasOption(DEL_ALL_OPT)) {
-				this.REQUESTER.deleteAll();
+			} else if (cmd.hasOption(SHUTDOWN_ALL_OPT)) {
+				this.mClientManager.shutdownAll();
 			} else if (cmd.hasOption(SETTINGMODE)) {
 				this.settingMode();
 			} else if (cmd.hasOption(DEVICEMODE)) {
 				this.deviceMode();
 			} else if (cmd.hasOption(LIST_OPT)) {
-				this.listDevices();
+				this.mDeviceManager.listDevices();
 			} else if (cmd.hasOption(VERSION_OPT)) {
 				log.info("Build: {}", Client.class.getPackage().getImplementationVersion());
 			} else if (cmd.hasOption(QUIT)) {
@@ -488,7 +351,7 @@ public class Client {
 		}
 	}
 
-	protected void settingMode() {
+	private void settingMode() {
 		log.info("Entered setting mode");
 		InputStreamReader converter = new InputStreamReader(System.in);
 		BufferedReader in = new BufferedReader(converter);
@@ -505,14 +368,14 @@ public class Client {
 		}
 	}
 
-	protected boolean processSettingInput(final String[] pInput) {
+	private boolean processSettingInput(final String[] pInput) {
 		try {
 			CommandLineParser parser = new PosixParser();
 			CommandLine cmd = parser.parse(this.SETTING_OPTIONS, pInput);
 			if (cmd.hasOption(HELP_OPT)) {
 				showHelp(this.SETTING_OPTIONS);
 			} else if (cmd.hasOption(LIST_OPT)) {
-				this.listSettings();
+				this.mSettingManager.listSettings();
 			} else if (cmd.hasOption(QUIT)) {
 				log.info("Quiting setting mode");
 				return false;
@@ -523,10 +386,10 @@ public class Client {
 				String pStoragePath = cmd.getOptionValue(STORAGEPATH);
 				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH);
 				String pSDCard = cmd.getOptionValue(SDCARD);
-				this.createSetting(pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
+				this.mSettingManager.createSetting(pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
 			} else if (cmd.hasOption(DELETE_OPT)) {
 				String pID = cmd.getOptionValue(DELETE_OPT);
-				this.deleteSetting(pID);
+				this.mSettingManager.deleteSetting(pID);
 			} else if (cmd.hasOption(UPDATE_OPT)) {
 				String pID = cmd.getOptionValue(UPDATE_OPT);
 				String pName = cmd.getOptionValue(NAME_OPT);
@@ -535,13 +398,13 @@ public class Client {
 				String pStoragePath = cmd.getOptionValue(STORAGEPATH);
 				String pFileNamePath = cmd.getOptionValue(FILENAMEPATH);
 				String pSDCard = cmd.getOptionValue(SDCARD);
-				this.updateSetting(pID, pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
+				this.mSettingManager.updateSetting(pID, pName, pBuffer, pPort, pStoragePath, pFileNamePath, pSDCard);
 			} else if (cmd.hasOption(WRITE_OPT)) {
-				this.writeSettings();
+				this.mSettingManager.writeSettingsToFile();
 			} else if (cmd.hasOption(ADD_OPT)) {
 				String pID = cmd.getOptionValue(ADD_OPT);
 				String[] pDevices = cmd.getOptionValues(DEVICEID_OPT);
-				this.addDevicesToSetting(pID, pDevices);
+				this.mSettingManager.addDevicesToSetting(pID, pDevices);
 			} else {
 				log.info("No commands selected, are you putting - before the command?");
 			}
@@ -552,7 +415,7 @@ public class Client {
 		return true;
 	}
 
-	protected void deviceMode() {
+	private void deviceMode() {
 		log.info("Entered device mode");
 		InputStreamReader converter = new InputStreamReader(System.in);
 		BufferedReader in = new BufferedReader(converter);
@@ -569,14 +432,14 @@ public class Client {
 		}
 	}
 
-	protected boolean processDeviceInput(final String[] pInput) {
+	private boolean processDeviceInput(final String[] pInput) {
 		try {
 			CommandLineParser parser = new PosixParser();
 			CommandLine cmd = parser.parse(this.DEVICE_OPTIONS, pInput);
 			if (cmd.hasOption(HELP_OPT)) {
 				showHelp(this.DEVICE_OPTIONS);
 			} else if (cmd.hasOption(LIST_OPT)) {
-				this.listDevices();
+				this.mDeviceManager.listDevices();
 			} else if (cmd.hasOption(QUIT)) {
 				log.info("Quiting device mode");
 				return false;
@@ -585,19 +448,19 @@ public class Client {
 				String pIP = cmd.getOptionValue(IP).trim();
 				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
 				String pFileName = cmd.getOptionValue(FILENAME);
-				this.createDevice(pName, pIP, pPort, pFileName);
+				this.mDeviceManager.createDevice(pName, pIP, pPort, pFileName);
 			} else if (cmd.hasOption(DELETE_OPT)) {
 				String pID = cmd.getOptionValue(DELETE_OPT);
-				this.deleteDevice(pID);
+				this.mDeviceManager.deleteDevice(pID);
 			} else if (cmd.hasOption(UPDATE_OPT)) {
 				String pID = cmd.getOptionValue(UPDATE_OPT);
 				String pName = cmd.getOptionValue(NAME_OPT);
 				String pIP = cmd.getOptionValue(IP);
 				String pPort = cmd.getOptionValue(SERVERPORT_OPT);
 				String pFileName = cmd.getOptionValue(FILENAME);
-				this.updateDevice(pID, pName, pIP, pPort, pFileName);
+				this.mDeviceManager.updateDevice(pID, pName, pIP, pPort, pFileName);
 			} else if (cmd.hasOption(WRITE_OPT)) {
-				this.writeDevices();
+				this.mDeviceManager.writeDevices();
 			} else {
 				log.info("No commands selected, are you putting - before the command?");
 			}
@@ -606,316 +469,6 @@ public class Client {
 			showHelp(this.DEVICE_OPTIONS);
 		}
 		return true;
-	}
-
-	protected Device getDevice(final int pDeviceNumber) {
-		for (Device device : this.DEVICES) {
-			if (device.getID() == pDeviceNumber) {
-				return device;
-			}
-		}
-		log.warn("Could not find device: {} in device list", pDeviceNumber);
-		return null;
-	}
-
-	protected void collectSingle(final String pDevice) {
-		try {
-			final int pDeviceNo = Integer.parseInt(pDevice);
-			this.collectSingle(pDeviceNo);
-		} catch (NumberFormatException e) {
-			log.error("Could not get a number, going up..^");
-			return;
-		}
-	}
-
-	protected void collectSingle(final int pDevice) {
-		Device pDeviceObj = this.getDevice(pDevice);
-		this.collectSingle(pDeviceObj);
-	}
-
-	protected void collectSingle(final Device pDevice) {
-		if (pDevice != null) {
-			this.REQUESTER.getSingle(pDevice);
-		} else {
-			log.info("Could not find a device with that ID");
-		}
-	}
-
-	protected void deleteSingle(final String pDevice) {
-		try {
-			final int pDeviceNo = Integer.parseInt(pDevice);
-			this.deleteSingle(pDeviceNo);
-		} catch (NumberFormatException e) {
-			log.error("Could not get a number, going up..^");
-			return;
-		}
-	}
-
-	protected void deleteSingle(final int pDevice) {
-		Device pDeviceObj = this.getDevice(pDevice);
-		this.deleteSingle(pDeviceObj);
-	}
-
-	protected void deleteSingle(final Device pDevice) {
-		if (pDevice != null) {
-			this.REQUESTER.deleteSingle(pDevice);
-		} else {
-			log.info("Could not find a device with that ID");
-		}
-	}
-
-	protected void shutdownSingle(final String pDevice) {
-		try {
-			final int pDeviceNo = Integer.parseInt(pDevice);
-			this.deleteSingle(pDeviceNo);
-		} catch (NumberFormatException e) {
-			log.error("Could not get a number, going up..^");
-			return;
-		}
-	}
-
-	protected void shutdownSingle(final int pDevice) {
-		Device pDeviceObj = this.getDevice(pDevice);
-		this.deleteSingle(pDeviceObj);
-	}
-
-	protected void shutdownSingle(final Device pDevice) {
-		if (pDevice != null) {
-			this.REQUESTER.shutdownSingle(pDevice);
-		} else {
-			log.info("Could not find a device with that ID");
-		}
-	}
-
-	protected void listDevices() {
-		StringBuilder builder = new StringBuilder();
-		for (Device device : this.DEVICES) {
-			builder.append("ID: ");
-			builder.append(device.getID());
-			builder.append(" Device: ");
-			builder.append(device.getName());
-			builder.append(" File: ");
-			builder.append(device.getFileName());
-			builder.append(" Port: ");
-			builder.append(device.getPort());
-			builder.append(" IP: ");
-			builder.append(device.getAddress());
-			log.info(builder.toString());
-			builder.setLength(0);
-		}
-	}
-
-	protected void listSettings() {
-		StringBuilder builder = new StringBuilder();
-		for (Setting setting : this.SETTINGS) {
-			builder.append(" ID: ");
-			builder.append(setting.getID());
-			builder.append(" Name: ");
-			builder.append(setting.getName());
-			builder.append(" Buffer: ");
-			builder.append(setting.getBuffer());
-			builder.append(" Port: ");
-			builder.append(setting.getServerPort());
-			builder.append(" SDCARD: ");
-			builder.append(setting.getSDCard());
-			builder.append(" Storage path: ");
-			builder.append(setting.getStoragePath());
-			builder.append(" Filename path: ");
-			builder.append(setting.getFileNamePath());
-			builder.append(" Devices count: ");
-			builder.append(setting.getDevices().size());
-			log.info(builder.toString());
-			builder.setLength(0);
-		}
-	}
-
-	protected void createSetting(final String pName, final String pBuffer, final String pPort,
-			final String pStoragePath, final String pFileNamePath, final String pSDCard) {
-		final int buffer = (pBuffer == null) ? this.BUFFER : Integer.parseInt(pBuffer);
-		final int port = (pPort == null) ? this.SERVER_PORT : Integer.parseInt(pPort);
-		final boolean sdcard = (pSDCard == null) ? true : Boolean.parseBoolean(pSDCard);
-		if (pName == null || pStoragePath == null || pFileNamePath == null || pSDCard == null) {
-			log.info("Required attributes not found");
-			if (pName == null)
-				log.info("Name required");
-			if (pStoragePath == null)
-				log.info("Storage path required");
-			if (pFileNamePath == null)
-				log.info("File name of log required");
-			if (pSDCard == null)
-				log.info("SDcard required");
-		} else {
-			Setting setting = new Setting();
-			setting.setID(this.SETTING_ID_TO_USE.incrementAndGet());
-			setting.setName(pName);
-			setting.setBuffer(buffer);
-			setting.setServerPort(port);
-			setting.setFileNamePath(pFileNamePath);
-			setting.setStoragePath(pStoragePath);
-			setting.setSDCard(sdcard);
-			this.SETTINGS.add(setting.getID(), setting);
-		}
-	}
-
-	protected void deleteSetting(final String pID) {
-		if (pID == null) {
-			log.info("Cannot delete setting if setting profile ID is not passed");
-		} else {
-			int id = Integer.parseInt(pID);
-			Setting setting = this.SETTINGS.get(id);
-			if (setting != null) {
-				if (setting.getID() == id) {
-					this.SETTINGS.remove(id);
-					log.info("Removed setting profile: {}. REMEMBER TO CALl -w IN SETTTING MODE", id);
-				} else {
-					log.info("Mismatched setting profile and arraylist index. Found setting profile: {}",
-							setting.getID());
-				}
-			} else {
-				log.info("Could not locate setting profile: {}", id);
-			}
-		}
-	}
-
-	protected void updateSetting(final String pID, final String pName, final String pBuffer, final String pPort,
-			final String pStoragePath, final String pFileNamePath, final String pSDCard) {
-		if (pID == null) {
-			log.info("Require setting profile ID!");
-			return;
-		}
-		final int id = Integer.parseInt(pID);
-		Setting setting = this.SETTINGS.get(id);
-		final int buffer = (pBuffer == null) ? setting.getBuffer() : Integer.parseInt(pBuffer);
-		final int port = (pPort == null) ? setting.getServerPort() : Integer.parseInt(pPort);
-		final boolean sdcard = (pSDCard == null) ? setting.getSDCard() : Boolean.parseBoolean(pSDCard);
-		final String name = (pName == null) ? setting.getName() : pName;
-		final String storagepath = (pStoragePath == null) ? setting.getStoragePath() : pStoragePath;
-		final String filename = (pFileNamePath == null) ? setting.getFileNamePath() : pFileNamePath;
-		if (setting != null) {
-			if (setting.getID() == id) {
-				if (setting.getName().compareToIgnoreCase(name) != 0)
-					setting.setName(name);
-				if (setting.getStoragePath().compareToIgnoreCase(storagepath) != 0)
-					setting.setStoragePath(storagepath);
-				if (setting.getFileNamePath().compareToIgnoreCase(filename) != 0)
-					setting.setFileNamePath(filename);
-				if (setting.getBuffer() != buffer)
-					setting.setBuffer(buffer);
-				if (setting.getServerPort() != port)
-					setting.setServerPort(port);
-				if (setting.getSDCard() != sdcard)
-					setting.setSDCard(sdcard);
-				log.info("Updated setting profile: {} . REMEMBER TO CALL -w IN SETTTING MODE", id);
-			} else {
-				log.info("Mismatched setting profile and arraylist index. Found setting profile: {}", setting.getID());
-			}
-		} else {
-			log.info("Could not locate setting profile: {}", id);
-		}
-	}
-
-	protected void createDevice(final String pName, final String pIP, final String pPort, final String pFileName) {
-		final int port = (pPort == null) ? this.PORT : Integer.parseInt(pPort);
-		if (pName == null || pIP == null || pFileName == null) {
-			log.info("Required attributes not found");
-			if (pName == null)
-				log.info("Name required");
-			if (pIP == null)
-				log.info("IP required");
-			if (pFileName == null)
-				log.info("File name of log required");
-		} else {
-			Device device = new Device();
-			device.setID(this.DEVICE_ID_TO_USE.incrementAndGet());
-			device.setName(pName);
-			device.setAddress(pIP);
-			device.setFileName(pFileName);
-			device.setPort(port);
-			this.DEVICES.add(device.getID(), device);
-		}
-	}
-
-	protected void deleteDevice(final String pID) {
-		if (pID == null) {
-			log.info("Cannot delete device if device ID is not passed");
-		} else {
-			/*
-			 * TODO locate device and delete, also search settings for device to delete as well.
-			 */
-		}
-	}
-
-	protected void updateDevice(final String pID, final String pName, final String pIP, final String pPort,
-			final String pFileName) {
-		if (pID == null) {
-			log.info("Require device ID!");
-			return;
-		}
-		final int id = Integer.parseInt(pID);
-		Device device = this.DEVICES.get(id);
-		final int port = (pPort == null) ? device.getPort() : Integer.parseInt(pPort);
-		final String name = (pName == null) ? device.getName() : pName;
-		final String ip = (pIP == null) ? device.getAddress() : pIP;
-		final String filename = (pFileName == null) ? device.getFileName() : pFileName;
-		if (device != null) {
-			if (device.getID() == id) {
-				if (device.getName().compareToIgnoreCase(name) != 0)
-					device.setName(name);
-				if (device.getAddress().compareToIgnoreCase(ip) != 0)
-					device.setAddress(ip);
-				if (device.getPort() != port)
-					device.setPort(port);
-				if (device.getFileName().compareToIgnoreCase(filename) != 0)
-					device.setFileName(filename);
-				log.info("Updated device profile: {} . REMEMBER TO CALL -w IN DEVICE MODE", id);
-			} else {
-				log.info("Mismatched device profile and arraylist index. Found device profile: {}", device.getID());
-			}
-		} else {
-			log.info("Could not locate device profile: {}", id);
-		}
-	}
-
-	protected void addDevicesToSetting(final String pID, final String[] pDevices){
-		if (pID == null) {
-			log.info("Require Setting ID!");
-			return;
-		}
-		if (pDevices == null) {
-			log.info("Require device IDs!");
-			return;
-		}
-		final int id = Integer.parseInt(pID);
-		Setting setting = this.SETTINGS.get(id);
-		if (setting != null) {
-			if (setting.getID() == id) {
-				for (String did : pDevices) {
-					int pDeviceID = Integer.parseInt(did);
-					Device device = this.DEVICES.get(pDeviceID);
-					if (device != null) {
-						setting.addDevices(pDeviceID);
-						log.info("Added device profile {} to setting profile", pDeviceID);
-					}else{
-						log.info("Could not locate device profile: {}", pDeviceID);
-					}
-				}
-			} else {
-				log.info("Mismatched setting profile and arraylist index. Found setting profile: {}", setting.getID());
-			}
-			log.info("Finished! Remember to call -w in setting mode to write changes!");
-		}else{
-			log.info("Could not locate setting profile: {}", id);
-		}
-	}
-
-	protected void writeSettings() {
-		log.info("Writing settings to file");
-		SettingsWriter writer = new SettingsWriter(this.SETTING_FILE);
-		writer.write(this.SETTINGS);
-	}
-
-	protected void writeDevices() {
-
 	}
 
 	// ===========================================================

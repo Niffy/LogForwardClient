@@ -35,6 +35,8 @@ public class Requester implements ILogOwner {
 	// Fields
 	// ===========================================================
 	protected ClientSelector mSelector;
+	protected DeviceManager mDeviceManager;
+	protected SettingManager mSettingManager;
 	protected ArrayList<Device> mDevices = new ArrayList<Device>();
 	protected Setting mSetting;
 	protected AtomicInteger mSeq = new AtomicInteger();
@@ -47,16 +49,16 @@ public class Requester implements ILogOwner {
 	 * Key = Seq num Value = Device its for
 	 */
 	protected HashMap<Integer, Device> mRequestDeviceCrossRef = new HashMap<Integer, Device>();
-	
+
 	// ===========================================================
 	// Constructors
 	// ===========================================================
 
-	public Requester(final ClientSelector pSelector, final ArrayList<Device> pDevices, final Setting pSetting,
-			final int pVersion) {
+	public Requester(final ClientSelector pSelector, final DeviceManager pDeviceManager,
+			final SettingManager pSettingManager, final int pVersion) {
 		this.mSelector = pSelector;
-		this.mDevices = pDevices;
-		this.mSetting = pSetting;
+		this.mDeviceManager = pDeviceManager;
+		this.mSettingManager = pSettingManager;
 		this.mVersion = pVersion;
 	}
 
@@ -183,7 +185,7 @@ public class Requester implements ILogOwner {
 			log.error("Could not produce a shutdown request for device: {}", pDevice.getName());
 		}
 	}
-	
+
 	protected LogRequest<IMessage> produceShutdownRequest(final Device pDevice) {
 		final int pSequence = this.mSeq.getAndIncrement();
 		InetSocketAddress pAddress = this.getAddress(pDevice.getAddress(), this.getDevicePort(pDevice));
@@ -191,14 +193,15 @@ public class Requester implements ILogOwner {
 			log.error("Could not get address and port for device: {}", pDevice.getName());
 			return null;
 		}
-		MessageShutDownService pMessage = new MessageShutDownService(this.mVersion, MessageFlag.SHUT_DOWN_SERVICE.getNumber());
+		MessageShutDownService pMessage = new MessageShutDownService(this.mVersion,
+				MessageFlag.SHUT_DOWN_SERVICE.getNumber());
 		pMessage.setSequence(pSequence);
 		LogRequest<IMessage> request = new LogRequest<IMessage>(pSequence, pAddress, pMessage, this);
 		this.mRequests.put(request.getClientRequest(), request);
 		this.mRequestDeviceCrossRef.put(pSequence, pDevice);
 		return request;
 	}
-	
+
 	protected <T extends IMessage> void handleMessage(int pRequest, T pMessage) {
 		int flag = pMessage.getMessageFlag();
 		if (flag == MessageFlag.DELETE_RESPONSE.getNumber()) {
@@ -221,13 +224,15 @@ public class Requester implements ILogOwner {
 		MessageDeleteResponse response = (MessageDeleteResponse) pMessage;
 		boolean deleted = response.getDeleted();
 		Device device = this.mRequestDeviceCrossRef.get(pMessage.getSequence());
-		if(device != null){
-			if(deleted){
-				log.info("DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(), device.getFileName());
-			}else{
-				log.info("NOT DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(), device.getFileName());
+		if (device != null) {
+			if (deleted) {
+				log.info("DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(),
+						device.getFileName());
+			} else {
+				log.info("NOT DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(),
+						device.getFileName());
 			}
-		}else{
+		} else {
 			log.warn("Could not locate device for message sequence: {}", pMessage.getSequence());
 		}
 		this.mRequests.remove(pMessage.getSequence());
