@@ -82,7 +82,7 @@ Two XML files are required for the program to run
 
 ## Running!
 
-First you need to compile the client program to a jar (Easy to do with eclipse). I called mine LogForwardClient-dependencies.jar 
+First you need to compile the client program to a jar (Easy to do with eclipse). I called mine LogForwardClient-dependencies.jar  Or you can grab the LogForwardLib and LogForwardClient repo and use ant release.
 
 ```
 java -jar LogForwardClient-dependencies.jar -dl X:\pathto\devices.xml -s x:\pathto\settings.xml
@@ -90,6 +90,7 @@ java -jar LogForwardClient-dependencies.jar -dl X:\pathto\devices.xml -s x:\path
 
 **Remember calling -h will bring up the help screen, this can be done for loading the program, executing normal commands or commands in the modes**
 
+**Remember you have to call -checkout SETTINGPROFILEID before you can run commands** 
 Then you have the following options.
 
 > -ca or -collectall
@@ -115,6 +116,10 @@ Attempt to shutdown the service on all devices
 > sds DEVICEID or -shutdownsingle DEVICEID
 
 Replace DEVICEID with the id of device you wish to shut down service on
+
+> -checkout SETTINGPROFILEID
+
+Checkout a setting profile to operate on. replaced SETTINGPROFILEID with the setting you wish to operate from.
 
 > -q or -quit
 
@@ -154,11 +159,35 @@ You can also run a similar command to update a device, you can pick what ever at
 **Remember to call -w in the mode to write changes!**
 
 ###Settings
-If you wish to update
+If you wish to create or update a profile you can do it here.
 
+To view current setting profiles run
+> -ls
+
+Here is an example of adding a setting profile
+> -c -n NAME -storagepath XYZ -filenamepath XYZ -sdcard TRUEorFALSE
+
+* -c Create a setting profile
+* -n Name of setting profile
+* -storagepath Location to store files on local disk
+* -filenamepath Name and location of where the log file will be located on remote device
+* -sdcard is the log on an external sdcard?
+
+You can then update the setting profile if needs be
+> -u SETTINGPROFILEID -n NAME -storagepath XYZ -filenamepath XYZ -sdcard TRUEorFALSE -b BUFFERSIZE -p PORT
+
+* -b Size of local network buffer
+* -p Default port to use when connecting to remote devices.
+
+You then have to add devices to the setting profile, this is quite easy to do.
+> -a SETTINGPROFILEID -did DEVICEID
+
+* -a Add a device to the given setting profile
+* -did the device ID to add to profile
+
+**Remember to call -w in the mode to write changes!**
 ## Future
-I've implemented a lot more than I first thought I would.  It works for now but will struggle to cope when I change what I'm working on.
-Some issues and ideas are in the issue area.
+I've implemented a lot more than I first thought I would. Some issues and ideas are in the issue area.  Working with the command line can make you become bogged down, so a GUI in future would be a good idea!
 
 The Client.java is starting to bloat and the if statements dealing with commands could become fragile in future.
 
