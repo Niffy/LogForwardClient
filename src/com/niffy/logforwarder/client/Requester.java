@@ -48,7 +48,7 @@ public class Requester implements ILogOwner {
 	/**
 	 * Key = Seq num Value = Device its for
 	 */
-	protected HashMap<Integer, Device> mRequestDeviceCrossRef = new HashMap<Integer, Device>();
+	protected HashMap<Integer, SettingDeviceRequesterPair> mRequestDeviceCrossRef = new HashMap<Integer, SettingDeviceRequesterPair>();
 
 	// ===========================================================
 	// Constructors
@@ -73,7 +73,10 @@ public class Requester implements ILogOwner {
 	// ===========================================================
 	// Getter & Setter
 	// ===========================================================
-
+	public void setCurrentSetting(final Setting pSetting){
+		this.mSetting = pSetting;
+	}
+	
 	// ===========================================================
 	// Methods
 	// ===========================================================
@@ -147,7 +150,8 @@ public class Requester implements ILogOwner {
 		pMessage.setSequence(pSequence);
 		LogRequest<IMessage> request = new LogRequest<IMessage>(pSequence, pAddress, pMessage, this);
 		this.mRequests.put(request.getClientRequest(), request);
-		this.mRequestDeviceCrossRef.put(pSequence, pDevice);
+		SettingDeviceRequesterPair pair = new SettingDeviceRequesterPair(this.mSetting, pDevice, pSequence);
+		this.mRequestDeviceCrossRef.put(pSequence, pair);
 		return request;
 	}
 
@@ -173,7 +177,8 @@ public class Requester implements ILogOwner {
 		pMessage.setSequence(pSequence);
 		LogRequest<IMessage> request = new LogRequest<IMessage>(pSequence, pAddress, pMessage, this);
 		this.mRequests.put(request.getClientRequest(), request);
-		this.mRequestDeviceCrossRef.put(pSequence, pDevice);
+		SettingDeviceRequesterPair pair = new SettingDeviceRequesterPair(this.mSetting, pDevice, pSequence);
+		this.mRequestDeviceCrossRef.put(pSequence, pair);
 		return request;
 	}
 
@@ -198,7 +203,8 @@ public class Requester implements ILogOwner {
 		pMessage.setSequence(pSequence);
 		LogRequest<IMessage> request = new LogRequest<IMessage>(pSequence, pAddress, pMessage, this);
 		this.mRequests.put(request.getClientRequest(), request);
-		this.mRequestDeviceCrossRef.put(pSequence, pDevice);
+		SettingDeviceRequesterPair pair = new SettingDeviceRequesterPair(this.mSetting, pDevice, pSequence);
+		this.mRequestDeviceCrossRef.put(pSequence, pair);
 		return request;
 	}
 
@@ -223,7 +229,8 @@ public class Requester implements ILogOwner {
 	protected <T extends IMessage> void handleDeleteResponse(T pMessage) {
 		MessageDeleteResponse response = (MessageDeleteResponse) pMessage;
 		boolean deleted = response.getDeleted();
-		Device device = this.mRequestDeviceCrossRef.get(pMessage.getSequence());
+		SettingDeviceRequesterPair pPair = this.mRequestDeviceCrossRef.get(pMessage.getSequence());
+		Device device = pPair.getDevice();
 		if (device != null) {
 			if (deleted) {
 				log.info("DELETED: ID: {} Device: {} logfile: {}", device.getID(), device.getName(),
@@ -244,8 +251,9 @@ public class Requester implements ILogOwner {
 		log.error("Server could not handle request Seq: {} Msg: {}", error.getSequence(), error.getError());
 	}
 
-	protected void writeFile(final byte[] pData, final Device pDevice) {
-		if (pDevice != null) {
+	protected void writeFile(final byte[] pData, final SettingDeviceRequesterPair pPair) {
+		if (pPair != null) {
+			Device pDevice = pPair.getDevice();
 			FileOutputStream fop = null;
 			String pPath = this.mSetting.getStoragePath() + pDevice.getFileName();
 			try {

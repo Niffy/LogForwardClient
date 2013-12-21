@@ -49,6 +49,7 @@ public class ClientManager {
 			log.error("Error creating selector", e);
 		}
 		this.mRequester = new Requester(this.mClientSelector, this.mDeviceManager, this.mSettingManager, VERSIONCODE);
+		
 		this.mLogManager.setSelector(mClientSelector);
 	}
 
@@ -149,6 +150,7 @@ public class ClientManager {
 			final int pSetting = Integer.parseInt(pSettingProfileID);
 			Setting setting = this.mSettingManager.getSetting(pSetting);
 			log.info("Using setting: {}", setting.getName());
+			this.mRequester.setCurrentSetting(setting);
 		} catch (NumberFormatException e) {
 			log.error("Could not get a number, going up..^");
 			return;
